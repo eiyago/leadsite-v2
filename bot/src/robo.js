@@ -74,9 +74,11 @@ function proximoFollowup() {
   for (const l of DB.leads()) {
     if (l.respondeu || l.humano) continue;
     const d = dias(l.abordadoEm);
+    // 1º benefício (dia 2) · 2º quebra de preço (dia 5) · 3º porta aberta (dia 9) · perdido (dia 14)
     if (l.etapa === 'abordado' && d >= CFG.followup1) return { l, n: 1 };
     if (l.etapa === 'followup1' && d >= CFG.followup2) return { l, n: 2 };
-    if (l.etapa === 'followup2' && d >= CFG.followup2 + 4) { DB.upsert({ id: l.id, etapa: 'perdido' }); }
+    if (l.etapa === 'followup2' && d >= CFG.followup2 + 4) return { l, n: 3 };
+    if (l.etapa === 'followup3' && d >= CFG.followup2 + 9) { DB.upsert({ id: l.id, etapa: 'perdido' }); }
   }
   return null;
 }
@@ -98,7 +100,7 @@ async function abordar(l) {
 async function fazerFollowup({ l, n }) {
   const msg = await followup(l, l.linkPrevia, n);
   await enviar(l.jid, msg);
-  DB.upsert({ id: l.id, etapa: n === 1 ? 'followup1' : 'followup2' });
+  DB.upsert({ id: l.id, etapa: `followup${n}` });
   DB.log(l.id, 'eu', msg);
   log(`🔁 Follow-up ${n}: ${l.nome}`);
 }

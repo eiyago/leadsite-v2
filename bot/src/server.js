@@ -17,7 +17,7 @@ if(!j.img){c.innerHTML='<h1>Gerando QR…</h1><p>Aguarde alguns segundos.</p>';}
 else c.innerHTML='<h1>Conecte o chip de vendas</h1><img src="'+j.img+'" alt="QR"><ol><li>No celular do <b>chip de vendas</b>, abra o WhatsApp</li><li>Toque em ⋮ ou Configurações → <b>Aparelhos conectados</b></li><li><b>Conectar um aparelho</b> e aponte para o QR</li></ol><small>O QR muda sozinho a cada ~20s.</small>';}catch(e){}
 setTimeout(t,3000)}t();</script></body></html>`;
 
-const ETAPA = { abordado: 'abordado', followup1: 'abordado', followup2: 'followup', conversando: 'followup', negociando: 'agendado', convertido: 'convertido', optout: 'perdido', perdido: 'perdido' };
+const ETAPA = { abordado: 'abordado', followup1: 'abordado', followup2: 'followup', followup3: 'followup', conversando: 'followup', negociando: 'agendado', convertido: 'convertido', optout: 'perdido', perdido: 'perdido' };
 
 function paraApp(l) {
   return {
