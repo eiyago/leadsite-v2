@@ -9,7 +9,7 @@ if (f.length) {
   process.exit(1);
 }
 
-console.log(`\n🚀 LeadSite Robô — vendendo sites em ${CFG.cidade}\n`);
+console.log('\n🚀 LeadSite Robô — vendendo sites\n');
 process.on('unhandledRejection', (e) => console.error('[erro]', e?.message || e));
 iniciarServidor();
 await iniciar();

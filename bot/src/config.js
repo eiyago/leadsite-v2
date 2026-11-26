@@ -25,6 +25,11 @@ export const CFG = {
   followup2: num(process.env.FOLLOWUP2_DIAS, 5),
   demoBase: (process.env.DEMO_BASE || 'https://eiyago.github.io/leadsite-v2/').replace(/\/?$/, '/'),
   porta: num(process.env.PORTA, 3210),
+  minPorHora: num(process.env.MIN_POR_HORA, 3),
+  maxPorHora: num(process.env.MAX_POR_HORA, 4),
+  // próximas campanhas (separadas por ";"). O robô mede o potencial e escolhe a melhor quando a atual esgotar.
+  cidades: String(process.env.CIDADES || 'Cascavel, PR;Toledo, PR;Maringá, PR;Londrina, PR;Ponta Grossa, PR;Guarapuava, PR;Francisco Beltrão, PR;Pato Branco, PR;Medianeira, PR;Umuarama, PR;Campo Mourão, PR;Chapecó, SC;Dourados, MS;Campo Grande, MS;Curitiba, PR')
+    .split(';').map((s) => s.trim()).filter(Boolean),
   fuso: 'America/Sao_Paulo',
 };
 

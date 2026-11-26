@@ -20,13 +20,18 @@ export function cotaHoje() {
 const dentroDaJanela = (t) => CFG.diasAtivos.includes(t.dia) && t.hora >= CFG.horaInicio && t.hora < CFG.horaFim;
 const podeResponder = (t) => t.hora >= CFG.respostaInicio && t.hora < CFG.respostaFim;
 
-function proximoIntervalo(t) {
-  const restante = Math.max(15, CFG.horaFim * 60 - t.minutos);
-  const faltam = Math.max(1, cotaHoje() - DB.enviadosHoje(t.data));
-  const base = Math.min(45, Math.max(10, restante / faltam)); // minutos, entre 10 e 45 (bem espaçado)
-  const pausa = Math.random() < 0.15 ? 20 + Math.random() * 25 : 0; // às vezes uma pausa maior, como gente de verdade
-  return (base * (0.7 + Math.random() * 0.6) + pausa) * 60e3;
+/* ritmo: 3 a 4 mensagens por hora (uma a cada ~15–20 min, com variação natural).
+   O teto do dia (cotaHoje) continua valendo por cima disso. */
+function proximoIntervalo() {
+  const porHora = CFG.minPorHora + Math.random() * (CFG.maxPorHora - CFG.minPorHora);
+  const base = 60 / porHora;
+  return (base + (Math.random() * 3 - 1.5)) * 60e3;
 }
+/* depois de qualquer mensagem iniciada pelo robô, segura a próxima para não passar de 4/hora */
+const segurarRitmo = () => DB.setMeta('proximoEnvio', Math.max(DB.meta.proximoEnvio || 0, Date.now() + proximoIntervalo()));
+
+/* ---------- campanha por cidade ---------- */
+export const cidadeAtual = () => DB.meta.cidade || CFG.cidade;
 
 /* ---------- avisos para você ---------- */
 async function avisar(texto) {
@@ -38,20 +43,64 @@ async function avisar(texto) {
 const linkChat = (l) => `https://wa.me/${l.wa}`;
 
 /* ---------- mineração ---------- */
+const encaixa = (l) => l.temp === 'quente' && l.siteTipo !== 'tem' && l.mobile; // quente, sem site, com celular
+
 async function minerar() {
+  const cidade = cidadeAtual();
   const cat = CFG.categorias[DB.meta.catIdx % CFG.categorias.length];
   DB.setMeta('catIdx', DB.meta.catIdx + 1);
-  log(`⛏️  Minerando "${cat}" em ${CFG.cidade}…`);
-  const achados = await buscar(cat, CFG.cidade, 60);
+  log(`⛏️  Minerando "${cat}" em ${cidade}…`);
+  const achados = await buscar(cat, cidade, 60);
   let novos = 0;
   for (const l of achados) {
-    if (DB.lead(l.id)) continue;
-    if (l.temp !== 'quente' || l.siteTipo === 'tem' || !l.mobile) continue; // só quentes, sem site e com celular
+    if (DB.lead(l.id) || !encaixa(l)) continue;
     DB.upsert({ ...l, etapa: 'fila', mineradoEm: new Date().toISOString() });
     novos++;
   }
+  // conta rodadas seguidas sem nada novo: quando passar por TODOS os nichos sem achar nada, a cidade esgotou
+  DB.setMeta('rodadasSecas', novos ? 0 : (DB.meta.rodadasSecas || 0) + 1);
   log(`   +${novos} leads quentes sem site na fila`);
   return novos;
+}
+
+/* mede o potencial de uma cidade: leads quentes, sem site e com celular em vários nichos */
+async function medirCidade(cidade) {
+  const amostra = CFG.categorias.slice(0, 4);
+  let total = 0; const porNicho = {};
+  for (const cat of amostra) {
+    try { const r = await buscar(cat, cidade, 20); const n = r.filter((l) => encaixa(l) && !DB.lead(l.id)).length; porNicho[cat] = n; total += n; }
+    catch (e) { log(`   [medir ${cidade}] ${e.message}`); }
+  }
+  return { cidade, total, nichos: Object.values(porNicho).filter((n) => n > 0).length, porNicho };
+}
+
+/* cidade esgotou: testa as próximas da lista, escolhe a de maior potencial e troca a campanha */
+export async function trocarCidade(forcada) {
+  const usadas = new Set([...(DB.meta.cidadesUsadas || []), cidadeAtual()]);
+  let escolha;
+  if (forcada) escolha = { cidade: forcada, total: null };
+  else {
+    const candidatas = CFG.cidades.filter((c) => !usadas.has(c)).slice(0, 4);
+    if (!candidatas.length) {
+      await avisar(`🏁 *${cidadeAtual()}* esgotou e acabaram as cidades da lista.\nMande /cidade Nome, UF para escolher a próxima (ou adicione em CIDADES no .env).`);
+      DB.setMeta('rodadasSecas', 0);
+      return null;
+    }
+    log(`🗺️  ${cidadeAtual()} esgotou. Medindo potencial de: ${candidatas.join(' | ')}`);
+    const medidas = [];
+    for (const c of candidatas) medidas.push(await medirCidade(c));
+    medidas.sort((a, b) => b.total - a.total || b.nichos - a.nichos);
+    escolha = medidas[0];
+    log(`   potencial: ${medidas.map((m) => `${m.cidade}=${m.total}`).join(', ')}`);
+  }
+  const anterior = cidadeAtual();
+  DB.setMeta('cidadesUsadas', [...usadas]);
+  DB.setMeta('cidade', escolha.cidade);
+  DB.setMeta('catIdx', 0);
+  DB.setMeta('rodadasSecas', 0);
+  log(`🚚 Nova campanha: ${escolha.cidade}`);
+  await avisar(`🚚 *Nova campanha: ${escolha.cidade}*\n${forcada ? 'Trocada por você.' : `${anterior} esgotou (todos os nichos sem leads novos quentes e sem site). Escolhi a cidade de maior potencial: ${escolha.total} leads prontos só na amostra.`}\nO ritmo e a cota continuam os mesmos.`);
+  return escolha;
 }
 
 async function proximoNovo() {
@@ -59,10 +108,16 @@ async function proximoNovo() {
   let fila = DB.leads().filter((l) => l.etapa === 'fila');
   const cats = () => new Set(fila.map((l) => l.categoria)).size;
   let tentativas = 0;
-  while ((fila.length < 5 || cats() < 4) && tentativas < 4) {
+  while (fila.length < 5 || cats() < 4) {
+    // fila vazia: passa por todos os nichos de uma vez para saber se a cidade esgotou
+    if (tentativas >= (fila.length ? 4 : CFG.categorias.length + 1)) break;
     tentativas++;
     try { await minerar(); } catch (e) { log('[mineração] erro:', e.message); break; }
     fila = DB.leads().filter((l) => l.etapa === 'fila');
+    if (!fila.length && (DB.meta.rodadasSecas || 0) >= CFG.categorias.length) {
+      if (!(await trocarCidade())) break;
+      tentativas = 0;
+    }
   }
   // escolhe o nicho menos abordado nas últimas 24h; dentro dele, o lead mais quente
   const recentes = DB.leads().filter((l) => l.abordadoEm && dias(l.abordadoEm) < 1);
@@ -164,7 +219,7 @@ function pedirEncaminhar(id) {
       await enviar(l.jid, msg);
       DB.contarEnvio(t.data);
       DB.log(id, 'eu', msg);
-      log(`📨 Pedi para encaminhar ao responsável: ${l.nome}`);
+      log(`📨 Pedi para encaminhar ao responsável: ${l.nome}`); segurarRitmo();
     } catch (e) { log('[encaminhar] erro:', e.message); }
   }, (100 + Math.random() * 140) * 1000);
 }
@@ -206,9 +261,15 @@ async function comando(c, original = c) {
   if (c.startsWith('/retomar')) { DB.setMeta('pausado', false); return avisar('▶️ Robô retomado.'); }
   if (c.startsWith('/status')) {
     const all = DB.leads(); const n = (e) => all.filter((l) => l.etapa === e).length;
-    return avisar(`📊 *Robô LeadSite*\nHoje: ${DB.enviadosHoje(t.data)}/${cotaHoje()} abordagens\nNa fila: ${n('fila')}\nAbordados: ${all.filter((l) => l.abordadoEm).length}\nResponderam: ${all.filter((l) => l.respondeu).length}\nConversando: ${n('conversando')}\nProntos p/ fechar: ${n('negociando')}\nSem interesse: ${n('optout')}\n${DB.meta.pausado ? '⏸️ PAUSADO' : '▶️ rodando'}`);
+    return avisar(`📊 *Robô LeadSite*\n📍 Campanha: ${cidadeAtual()}\nHoje: ${DB.enviadosHoje(t.data)}/${cotaHoje()} mensagens (${CFG.minPorHora}–${CFG.maxPorHora} por hora)\nNa fila: ${n('fila')}\nAbordados: ${all.filter((l) => l.abordadoEm).length}\nResponderam: ${all.filter((l) => l.respondeu).length}\nConversando: ${n('conversando')}\nProntos p/ fechar: ${n('negociando')}\nSem interesse: ${n('optout')}\n${DB.meta.pausado ? '⏸️ PAUSADO' : '▶️ rodando'}`);
   }
   if (c.startsWith('/teste')) return teste();
+  if (c.startsWith('/cidade')) {
+    const nova = original.slice(7).trim();
+    if (!nova) return avisar(`📍 Campanha atual: *${cidadeAtual()}*\nPróximas da lista: ${CFG.cidades.filter((x) => !(DB.meta.cidadesUsadas || []).includes(x)).slice(0, 5).join(', ')}\n\nPara trocar: /cidade Cascavel, PR\nPara eu medir e escolher a melhor: /cidade melhor`);
+    if (/^melhor$/i.test(nova)) { const r = await trocarCidade(); return r ? null : avisar('Não encontrei cidade nova na lista.'); }
+    return trocarCidade(/,\s*[A-Za-z]{2}$/.test(nova) ? nova : `${nova}, PR`);
+  }
   if (c.startsWith('/lead')) {
     const [busca, telefone, instagram] = original.slice(5).split('|').map((s) => s.trim());
     try {
@@ -219,7 +280,7 @@ async function comando(c, original = c) {
       return avisar(`✅ *${r.lead}* abordado agora!\nPrévia que ele recebeu: ${r.link}`);
     } catch (e) { return avisar(`⚠️ /lead: ${e.message}\nUso: /lead Nome do negócio | telefone (opcional) | @instagram (opcional)`); }
   }
-  if (c.startsWith('/')) return avisar('Comandos: /status, /pausar, /retomar, /teste, /lead Nome | telefone | @insta');
+  if (c.startsWith('/')) return avisar('Comandos: /status, /pausar, /retomar, /teste, /lead Nome | telefone | @insta, /cidade');
 }
 
 /* teste de ponta a ponta: lead real, prévia real, mensagem real — mas enviada para VOCÊ */
@@ -228,10 +289,10 @@ async function comando(c, original = c) {
 export async function leadManual({ busca, telefone, instagram, categoria }) {
   if (!busca) throw new Error('informe o nome do negócio');
   let l = null;
-  try { l = await buscarNegocio(busca, CFG.cidade); } catch (e) { log('[manual] busca falhou:', e.message); }
+  try { l = await buscarNegocio(busca, cidadeAtual()); } catch (e) { log('[manual] busca falhou:', e.message); }
   const ph = telefoneInfo(telefone || l?.telefone);
   if (!ph.wa) throw new Error('não achei telefone; mande junto: /lead Nome | (45) 99999-9999');
-  if (!l) l = { id: 'manual_' + ph.digits, nome: busca, cidade: CFG.cidade, endereco: '', rating: 0, reviews: 0, site: '', maps: '' };
+  if (!l) l = { id: 'manual_' + ph.digits, nome: busca, cidade: cidadeAtual(), endereco: '', rating: 0, reviews: 0, site: '', maps: '' };
   if (categoria) l.categoria = categoria;
   if (!l.categoria) l.categoria = 'Negócio local';
   Object.assign(l, { telefone: telefone || l.telefone, telDigits: ph.digits, wa: ph.wa, mobile: ph.mobile });
@@ -254,6 +315,7 @@ export async function leadManual({ busca, telefone, instagram, categoria }) {
   try {
     if (!(await abordar(DB.lead(l.id)))) throw new Error('esse número não tem WhatsApp');
     DB.contarEnvio(t.data);
+    segurarRitmo();
     const s = DB.lead(l.id);
     return { lead: s.nome, categoria: s.categoria, nota: s.rating, link: s.linkPrevia, mensagem: s.conversa?.at(-1)?.texto };
   } finally { ocupado = false; }
@@ -334,5 +396,5 @@ export function ligar() {
   DB.leads().filter((l) => l.autoResposta && !l.pediuEncaminhar && !l.respondeu && !l.humano)
     .forEach((l, i) => setTimeout(() => pedirEncaminhar(l.id), i * (180 + Math.random() * 120) * 1000));
   if (modoSemIA()) log('ℹ️  MODO SEM IA: mensagens de modelo; quem responder vai direto para você.');
-  log(`🤖 Robô ligado — ${CFG.cidade} · cota de hoje: ${cotaHoje()} abordagens · janela ${CFG.horaInicio}h–${CFG.horaFim}h`);
+  log(`🤖 Robô ligado — ${cidadeAtual()} · cota de hoje: ${cotaHoje()} abordagens · janela ${CFG.horaInicio}h–${CFG.horaFim}h`);
 }
