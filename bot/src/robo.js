@@ -55,14 +55,19 @@ async function minerar() {
 }
 
 async function proximoNovo() {
+  // variedade de nichos: mantém pelo menos 4 categorias diferentes na fila
   let fila = DB.leads().filter((l) => l.etapa === 'fila');
+  const cats = () => new Set(fila.map((l) => l.categoria)).size;
   let tentativas = 0;
-  while (fila.length < 5 && tentativas < 3) {
+  while ((fila.length < 5 || cats() < 4) && tentativas < 4) {
     tentativas++;
     try { await minerar(); } catch (e) { log('[mineração] erro:', e.message); break; }
     fila = DB.leads().filter((l) => l.etapa === 'fila');
   }
-  return fila.sort((a, b) => b.score - a.score || b.reviews - a.reviews)[0];
+  // escolhe o nicho menos abordado nas últimas 24h; dentro dele, o lead mais quente
+  const recentes = DB.leads().filter((l) => l.abordadoEm && dias(l.abordadoEm) < 1);
+  const usos = (c) => recentes.filter((l) => l.categoria === c).length;
+  return fila.sort((a, b) => usos(a.categoria) - usos(b.categoria) || b.score - a.score || b.reviews - a.reviews)[0];
 }
 
 function proximoFollowup() {
@@ -161,7 +166,23 @@ async function comando(c) {
     const all = DB.leads(); const n = (e) => all.filter((l) => l.etapa === e).length;
     return avisar(`📊 *Robô LeadSite*\nHoje: ${DB.enviadosHoje(t.data)}/${cotaHoje()} abordagens\nNa fila: ${n('fila')}\nAbordados: ${all.filter((l) => l.abordadoEm).length}\nResponderam: ${all.filter((l) => l.respondeu).length}\nConversando: ${n('conversando')}\nProntos p/ fechar: ${n('negociando')}\nSem interesse: ${n('optout')}\n${DB.meta.pausado ? '⏸️ PAUSADO' : '▶️ rodando'}`);
   }
-  if (c.startsWith('/')) return avisar('Comandos: /status, /pausar, /retomar');
+  if (c.startsWith('/teste')) return teste();
+  if (c.startsWith('/')) return avisar('Comandos: /status, /pausar, /retomar, /teste');
+}
+
+/* teste de ponta a ponta: lead real, prévia real, mensagem real — mas enviada para VOCÊ */
+export async function teste() {
+  let l = DB.leads().filter((x) => x.etapa === 'fila').sort((a, b) => b.score - a.score)[0];
+  if (!l) { await minerar(); l = DB.leads().filter((x) => x.etapa === 'fila').sort((a, b) => b.score - a.score)[0]; }
+  if (!l) return avisar('⚠️ Teste: não encontrei lead quente sem site agora.');
+  try { await enriquecer(l); } catch { /* segue */ }
+  const link = await linkPrevia(l);
+  DB.upsert({ ...l });
+  const msg = await abertura(l, link);
+  await avisar(`🧪 *TESTE* — é exatamente isto que *${l.nome}* (${l.categoria}, ${String(l.rating).replace('.', ',')}⭐, ${l.reviews} avaliações) vai receber:`);
+  await avisar(msg);
+  log(`🧪 Teste enviado para você com o lead ${l.nome}`);
+  return { lead: l.nome, link };
 }
 
 /* ---------- laço principal ---------- */
