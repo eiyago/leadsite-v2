@@ -35,7 +35,7 @@ export const DB = {
     (l.conversa = l.conversa || []).push({ papel, texto, em: new Date().toISOString() });
     l.atualizado = new Date().toISOString(); salvar();
   },
-  contarEnvio(data) { db.meta.enviadosPorDia[data] = (db.meta.enviadosPorDia[data] || 0) + 1; salvar(); },
+  contarEnvio(data) { db.meta.enviadosPorDia[data] = (db.meta.enviadosPorDia[data] || 0) + 1; db.meta.ultimoEnvio = Date.now(); salvar(); },
   enviadosHoje: (data) => db.meta.enviadosPorDia[data] || 0,
   setMeta(k, v) { db.meta[k] = v; salvar(); },
 };

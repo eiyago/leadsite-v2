@@ -194,6 +194,9 @@ export async function abordarAgora() {
   if (!conectado()) throw new Error('WhatsApp desconectado');
   if (DB.enviadosHoje(t.data) >= cotaHoje()) throw new Error('cota de hoje já atingida');
   while (ocupado) await new Promise((r) => setTimeout(r, 1000));
+  // nunca duas abordagens coladas: mínimo de 5 min desde a última (do robô ou manual)
+  const falta = 5 * 60e3 - (Date.now() - (DB.meta.ultimoEnvio || 0));
+  if (falta > 0) throw new Error(`aguarde ${Math.ceil(falta / 60e3)} min: a última abordagem foi há pouco`);
   ocupado = true;
   try {
     for (let i = 0; i < 4; i++) {
