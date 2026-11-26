@@ -4,7 +4,7 @@ import { CFG, agoraBR } from './config.js';
 import { DB } from './db.js';
 import QRCode from 'qrcode';
 import { conectado, qrAtual } from './wa.js';
-import { cotaHoje, teste } from './robo.js';
+import { cotaHoje, teste, abordarAgora } from './robo.js';
 
 const PAGINA_QR = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Conectar WhatsApp — Robô LeadSite</title>
 <style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0f172a;color:#e2e8f0;font:16px system-ui;text-align:center}
@@ -49,6 +49,9 @@ export function iniciarServidor() {
     if (url.pathname === '/status') {
       const t = agoraBR(); const all = DB.leads();
       return send({ conectado: conectado(), pausado: !!DB.meta.pausado, hoje: DB.enviadosHoje(t.data), cota: cotaHoje(), fila: all.filter((l) => l.etapa === 'fila').length, abordados: all.filter((l) => l.abordadoEm).length, responderam: all.filter((l) => l.respondeu).length, prontos: all.filter((l) => l.etapa === 'negociando').length, cidade: CFG.cidade });
+    }
+    if (req.method === 'POST' && url.pathname === '/abordar-agora') {
+      return abordarAgora().then((r) => send({ ok: true, ...r })).catch((e) => send({ ok: false, erro: e.message }, 400));
     }
     if (req.method === 'POST' && url.pathname === '/teste') {
       return teste().then((r) => send({ ok: true, ...(r || {}) })).catch((e) => send({ ok: false, erro: e.message }, 500));

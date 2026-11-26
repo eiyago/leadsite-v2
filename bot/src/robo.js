@@ -188,6 +188,27 @@ async function comando(c) {
 }
 
 /* teste de ponta a ponta: lead real, prévia real, mensagem real — mas enviada para VOCÊ */
+/* aborda o próximo lead agora (respeitando a cota do dia) e reagenda o ritmo normal */
+export async function abordarAgora() {
+  const t = agoraBR();
+  if (!conectado()) throw new Error('WhatsApp desconectado');
+  if (DB.enviadosHoje(t.data) >= cotaHoje()) throw new Error('cota de hoje já atingida');
+  while (ocupado) await new Promise((r) => setTimeout(r, 1000));
+  ocupado = true;
+  try {
+    for (let i = 0; i < 4; i++) {
+      const l = await proximoNovo(); if (!l) break;
+      if (await abordar(l)) {
+        DB.contarEnvio(t.data);
+        DB.setMeta('proximoEnvio', Date.now() + proximoIntervalo(t));
+        const salvo = DB.lead(l.id);
+        return { lead: salvo.nome, categoria: salvo.categoria, nota: salvo.rating, link: salvo.linkPrevia, mensagem: salvo.conversa?.at(-1)?.texto, hoje: `${DB.enviadosHoje(t.data)}/${cotaHoje()}` };
+      }
+    }
+    throw new Error('nenhum lead disponível com WhatsApp');
+  } finally { ocupado = false; }
+}
+
 export async function teste() {
   let l = DB.leads().filter((x) => x.etapa === 'fila').sort((a, b) => b.score - a.score)[0];
   if (!l) { await minerar(); l = DB.leads().filter((x) => x.etapa === 'fila').sort((a, b) => b.score - a.score)[0]; }
