@@ -23,8 +23,9 @@ const podeResponder = (t) => t.hora >= CFG.respostaInicio && t.hora < CFG.respos
 function proximoIntervalo(t) {
   const restante = Math.max(15, CFG.horaFim * 60 - t.minutos);
   const faltam = Math.max(1, cotaHoje() - DB.enviadosHoje(t.data));
-  const base = Math.min(30, Math.max(4, restante / faltam)); // minutos, entre 4 e 30
-  return base * (0.6 + Math.random() * 0.8) * 60e3;
+  const base = Math.min(45, Math.max(10, restante / faltam)); // minutos, entre 10 e 45 (bem espaçado)
+  const pausa = Math.random() < 0.15 ? 20 + Math.random() * 25 : 0; // às vezes uma pausa maior, como gente de verdade
+  return (base * (0.7 + Math.random() * 0.6) + pausa) * 60e3;
 }
 
 /* ---------- avisos para você ---------- */

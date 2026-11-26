@@ -62,7 +62,7 @@ export async function enriquecer(l) {
     .map((v) => ({ a: v.authorAttribution?.displayName || 'Cliente', r: v.rating, t: v.text.text.length > 260 ? v.text.text.slice(0, 257).trim() + '…' : v.text.text }));
   if (j.regularOpeningHours?.weekdayDescriptions?.length) l.horarios = j.regularOpeningHours.weekdayDescriptions;
   if (j.editorialSummary?.text) l.resumo = j.editorialSummary.text;
-  const nomes = (j.photos || []).slice(0, 8).map((p) => p.name);
+  const nomes = (j.photos || []).slice(0, 5).map((p) => p.name); // 5 fotos próprias: bom visual gastando menos cota
   const fotos = await Promise.all(nomes.map((n) =>
     fetch(`https://places.googleapis.com/v1/${n}/media?maxWidthPx=1800&skipHttpRedirect=true&key=${encodeURIComponent(CFG.placesKey)}`, { headers: { Referer: CFG.demoBase } })
       .then((x) => x.json()).then((x) => x.photoUri || null).catch(() => null)));
