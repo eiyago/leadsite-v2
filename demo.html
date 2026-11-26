@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Prévia do site</title>
+<style>
+  :root{--bg:#0f0f10;--fg:#f5f1e8;--ac:#c9a227;--soft:rgba(255,255,255,.06);--mut:rgba(255,255,255,.65)}
+  *{box-sizing:border-box}html{scroll-behavior:smooth}
+  body{margin:0;font:16px/1.6 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--fg)}
+  a{color:inherit}
+  .ribbon{background:#fff;color:#151a24;font-size:13px;text-align:center;padding:8px 12px}
+  .ribbon a{color:#17a34a;font-weight:700}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 22px}
+  nav{display:flex;align-items:center;justify-content:space-between;padding:18px 0}
+  nav b{font-size:18px;letter-spacing:.02em}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:13px 22px;border-radius:999px;font-weight:700;text-decoration:none;border:2px solid var(--ac);transition:transform .15s}
+  .btn:hover{transform:translateY(-2px)}
+  .btn.solid{background:var(--ac);color:var(--bg)}
+  .btn.sm{padding:9px 16px;font-size:14px}
+  .hero{padding:70px 0 80px;text-align:center}
+  .hero .kicker{display:inline-block;padding:6px 14px;border-radius:999px;background:var(--soft);color:var(--ac);font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.08em}
+  .hero h1{font-size:clamp(36px,7vw,68px);line-height:1.05;margin:18px 0 14px}
+  .hero p{font-size:clamp(17px,2.4vw,21px);color:var(--mut);max-width:640px;margin:0 auto 28px}
+  .rate{display:inline-flex;align-items:center;gap:10px;margin-bottom:28px;font-weight:600}
+  .rate .st{color:#f5b400;letter-spacing:2px;font-size:20px}
+  .cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+  section{padding:60px 0}
+  h2{font-size:clamp(26px,4vw,38px);margin:0 0 8px;text-align:center}
+  .sub{text-align:center;color:var(--mut);margin:0 0 34px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
+  .box{background:var(--soft);border-radius:18px;padding:24px}
+  .box h3{margin:0 0 6px;font-size:19px}.box p{margin:0;color:var(--mut);font-size:15px}
+  .box .n{color:var(--ac);font-weight:800;font-size:28px}
+  .loc{display:grid;grid-template-columns:1fr 1.3fr;gap:22px;align-items:stretch}
+  .loc iframe{width:100%;min-height:320px;border:0;border-radius:18px}
+  .hours{list-style:none;padding:0;margin:12px 0 0;font-size:15px}
+  .hours li{display:flex;justify-content:space-between;border-bottom:1px solid var(--soft);padding:6px 0;text-transform:capitalize}
+  footer{padding:40px 0 100px;text-align:center;color:var(--mut);font-size:14px}
+  .float{position:fixed;right:20px;bottom:20px;width:60px;height:60px;border-radius:50%;background:#25d366;display:grid;place-items:center;box-shadow:0 8px 24px rgba(0,0,0,.3);z-index:9}
+  .float svg{width:32px;height:32px;fill:#fff}
+  @media(max-width:760px){.loc{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+(function () {
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  function decode() {
+    const p = new URLSearchParams(location.search);
+    if (p.get('d')) {
+      try {
+        const b = p.get('d').replace(/-/g, '+').replace(/_/g, '/');
+        return JSON.parse(decodeURIComponent(escape(atob(b))));
+      } catch (e) { /* cai no exemplo */ }
+    }
+    return { n: p.get('n') || 'Seu Negócio', c: p.get('c') || 'Barbearia', t: p.get('t') || '', a: p.get('a') || '', r: Number(p.get('r')) || 4.9, u: Number(p.get('u')) || 120 };
+  }
+  const d = decode();
+
+  const THEMES = [
+    { k: /barb/i, bg: '#0f0f10', fg: '#f5f1e8', ac: '#c9a227', tag: 'Corte, barba e estilo — com hora marcada e sem espera.', cta: 'Agendar horário',
+      s: [['Corte masculino', 'Tesoura ou máquina, finalizado na navalha.'], ['Barba completa', 'Toalha quente, navalha e balm.'], ['Corte + barba', 'O combo mais pedido da casa.'], ['Sobrancelha e acabamentos', 'Detalhes que fazem diferença.']] },
+    { k: /sal[aã]o|cabel|beleza|est[eé]tic|unha|manicure|sobrancelha|depila/i, bg: '#fff7f5', fg: '#2b1b1b', ac: '#d4537e', tag: 'Beleza e cuidado feitos por quem entende — agende pelo WhatsApp.', cta: 'Agendar agora',
+      s: [['Cabelo', 'Corte, escova, coloração e tratamentos.'], ['Unhas', 'Manicure, pedicure e alongamento.'], ['Estética', 'Limpeza de pele e procedimentos faciais.'], ['Sobrancelhas', 'Design e henna.']] },
+    { k: /restaur|lanch|pizz|hamb|burger|comida|açaí|acai|padaria|caf[eé]|sorvet|doce|confeit|churras|sushi|marmit/i, bg: '#1a0f0a', fg: '#fff6ec', ac: '#ff7a2f', tag: 'Sabor de verdade, feito na hora. Peça pelo WhatsApp ou venha nos visitar.', cta: 'Fazer pedido',
+      s: [['Cardápio completo', 'Pratos e opções para todos os gostos.'], ['Delivery', 'Peça pelo WhatsApp e receba em casa.'], ['Retirada no local', 'Peça antes e retire sem fila.'], ['Encomendas', 'Para eventos e ocasiões especiais.']] },
+    { k: /academ|crossfit|pilates|fitness|muscula|funcional|yoga|luta|jiu|boxe/i, bg: '#0b0f14', fg: '#eef3f8', ac: '#22d36b', tag: 'Treine com acompanhamento de verdade. Agende sua aula experimental.', cta: 'Aula experimental',
+      s: [['Musculação', 'Treinos personalizados para o seu objetivo.'], ['Aulas coletivas', 'Energia lá em cima todos os dias.'], ['Avaliação física', 'Acompanhe sua evolução.'], ['Planos flexíveis', 'Mensal, trimestral ou anual.']] },
+    { k: /pet|veterin|banho e tosa|aqu[aá]rio/i, bg: '#f5fbff', fg: '#13293d', ac: '#1e88e5', tag: 'Cuidado e carinho para quem é da família.', cta: 'Agendar banho',
+      s: [['Banho e tosa', 'Higiene completa com produtos de qualidade.'], ['Consultas', 'Atendimento veterinário com carinho.'], ['Vacinas', 'Mantenha a carteirinha em dia.'], ['Rações e acessórios', 'Tudo o que seu pet precisa.']] },
+    { k: /odont|dentist|cl[ií]nica|m[eé]dic|fisio|psic|nutri|fono|derma|oftalm|laborat/i, bg: '#f4f9fb', fg: '#102a33', ac: '#0f9aa8', tag: 'Atendimento humano, com hora marcada e profissionais qualificados.', cta: 'Agendar consulta',
+      s: [['Consultas', 'Atendimento cuidadoso e sem pressa.'], ['Avaliação', 'Entenda seu caso e as opções de tratamento.'], ['Retornos', 'Acompanhamento contínuo.'], ['Convênios e particular', 'Consulte as condições pelo WhatsApp.']] },
+    { k: /oficina|mec[aâ]nic|auto|pneu|funilar|lava|borrach|moto/i, bg: '#111317', fg: '#f1f2f4', ac: '#f2c230', tag: 'Seu veículo em boas mãos. Orçamento rápido pelo WhatsApp.', cta: 'Pedir orçamento',
+      s: [['Revisão completa', 'Checklist para rodar com segurança.'], ['Troca de óleo e filtros', 'Rápido e com produtos de qualidade.'], ['Freios e suspensão', 'Diagnóstico preciso.'], ['Elétrica e injeção', 'Equipamentos de diagnóstico.']] },
+    { k: /advoga|contab|imobili|consult|seguro|arquitet|engenh/i, bg: '#0d1526', fg: '#eef2f8', ac: '#c8a96a', tag: 'Atendimento próximo e soluções sob medida para você e sua empresa.', cta: 'Falar com especialista',
+      s: [['Consultoria', 'Análise do seu caso com clareza.'], ['Atendimento personalizado', 'Você fala direto com quem resolve.'], ['Agilidade', 'Prazos respeitados.'], ['Atendimento online', 'Resolva sem sair de casa.']] },
+  ];
+  const DEF = { bg: '#0f172a', fg: '#f1f5f9', ac: '#38bdf8', tag: 'Qualidade, atendimento de confiança e o melhor da região. Fale com a gente pelo WhatsApp.', cta: 'Chamar no WhatsApp',
+    s: [['Atendimento de qualidade', 'Equipe pronta para te atender.'], ['Orçamento rápido', 'Resposta ágil pelo WhatsApp.'], ['Localização', 'Fácil de chegar.'], ['Clientes satisfeitos', 'Confira nossas avaliações no Google.']] };
+  const T = THEMES.find((t) => t.k.test(d.c || '')) || DEF;
+  const r = document.documentElement.style;
+  r.setProperty('--bg', T.bg); r.setProperty('--fg', T.fg); r.setProperty('--ac', T.ac);
+  const light = /^#f/i.test(T.bg);
+  r.setProperty('--soft', light ? 'rgba(0,0,0,.05)' : 'rgba(255,255,255,.06)');
+  r.setProperty('--mut', light ? 'rgba(0,0,0,.62)' : 'rgba(255,255,255,.68)');
+
+  let tel = String(d.t || '').replace(/\D/g, ''); if (tel.startsWith('55') && tel.length >= 12) tel = tel.slice(2);
+  const wa = tel.length >= 10 ? `https://wa.me/55${tel}?text=${encodeURIComponent('Olá! Vi o site e gostaria de mais informações.')}` : '#contato';
+  const city = d.ci || '';
+  const stars = '★★★★★'.slice(0, Math.round(d.r || 5)) + '☆☆☆☆☆'.slice(0, 5 - Math.round(d.r || 5));
+  const mapsQ = encodeURIComponent(`${d.n} ${d.a || ''}`);
+  const sellerWa = d.w ? `https://wa.me/${d.w}?text=${encodeURIComponent(`Oi! Vi a prévia do site da ${d.n} e quero saber mais.`)}` : '';
+  const waIcon = '<svg viewBox="0 0 32 32"><path d="M16 3C9 3 3.3 8.6 3.3 15.6c0 2.2.6 4.4 1.7 6.3L3 29l7.3-1.9c1.8 1 3.8 1.5 5.8 1.5 7 0 12.7-5.6 12.7-12.6S23 3 16 3zm0 23.1c-1.9 0-3.7-.5-5.3-1.4l-.4-.2-4.3 1.1 1.2-4.2-.3-.4a10.4 10.4 0 0 1-1.6-5.5C5.3 9.8 10.1 5.1 16 5.1s10.7 4.7 10.7 10.5S21.9 26.1 16 26.1zm5.8-7.8c-.3-.2-1.9-.9-2.2-1s-.5-.2-.7.2-.8 1-1 1.2-.4.2-.7.1c-.3-.2-1.3-.5-2.5-1.5-.9-.8-1.6-1.8-1.7-2.1s0-.5.1-.6l.5-.6c.2-.2.2-.4.3-.6s0-.4 0-.6l-1-2.4c-.3-.6-.5-.5-.7-.5h-.6c-.2 0-.6.1-.9.4s-1.2 1.1-1.2 2.8 1.2 3.2 1.4 3.4 2.4 3.6 5.8 5c.8.4 1.4.6 1.9.7.8.3 1.5.2 2.1.1.6-.1 1.9-.8 2.2-1.5s.3-1.3.2-1.5-.3-.2-.6-.3z"/></svg>';
+
+  document.title = `${d.n} — ${d.c || ''}${city ? ' em ' + city : ''}`;
+  document.getElementById('app').innerHTML = `
+    ${d.s || sellerWa ? `<div class="ribbon">✨ Prévia gratuita criada${d.s ? ' por <b>' + esc(d.s) + '</b>' : ''} para <b>${esc(d.n)}</b>. ${sellerWa ? `<a href="${sellerWa}" target="_blank" rel="noopener">Gostou? Coloque no ar →</a>` : ''}</div>` : ''}
+    <div class="wrap">
+      <nav><b>${esc(d.n)}</b><a class="btn sm solid" href="${wa}" target="_blank" rel="noopener">${esc(T.cta)}</a></nav>
+      <header class="hero">
+        <span class="kicker">${esc(d.c || '')}${city ? ' · ' + esc(city) : ''}</span>
+        <h1>${esc(d.n)}</h1>
+        <p>${esc(T.tag)}</p>
+        ${d.r ? `<div class="rate"><span class="st">${stars}</span> ${String(d.r).replace('.', ',')} no Google · ${d.u || 0} avaliações</div>` : ''}
+        <div class="cta">
+          <a class="btn solid" href="${wa}" target="_blank" rel="noopener">${esc(T.cta)}</a>
+          <a class="btn" href="#local">Como chegar</a>
+        </div>
+      </header>
+    </div>
+    <section><div class="wrap">
+      <h2>Serviços</h2><p class="sub">O que você encontra na ${esc(d.n)}</p>
+      <div class="grid">${T.s.map(([a, b]) => `<div class="box"><h3>${esc(a)}</h3><p>${esc(b)}</p></div>`).join('')}</div>
+    </div></section>
+    <section><div class="wrap">
+      <h2>Por que escolher a ${esc(d.n)}</h2><p class="sub">Quem conhece, recomenda.</p>
+      <div class="grid">
+        <div class="box"><div class="n">${d.r ? String(d.r).replace('.', ',') + ' ★' : '★★★★★'}</div><p>Nota no Google${d.u ? ` com ${d.u} avaliações reais de clientes` : ''}.</p></div>
+        <div class="box"><div class="n">WhatsApp</div><p>Atendimento rápido e direto, sem complicação.</p></div>
+        <div class="box"><div class="n">Perto de você</div><p>${esc(d.a || 'Fácil de chegar.')}</p></div>
+      </div>
+    </div></section>
+    <section id="local"><div class="wrap">
+      <h2>Onde estamos</h2><p class="sub">${esc(d.a || '')}</p>
+      <div class="loc">
+        <div class="box">
+          <h3>Contato</h3>
+          <p>${esc(d.t || '')}</p>
+          ${d.h && d.h.length ? `<ul class="hours">${d.h.map((h) => { const i = h.indexOf(':'); return `<li><span>${esc(h.slice(0, i))}</span><span>${esc(h.slice(i + 1))}</span></li>`; }).join('')}</ul>` : ''}
+          <p style="margin-top:16px"><a class="btn solid sm" href="${wa}" target="_blank" rel="noopener">${esc(T.cta)}</a>
+          <a class="btn sm" href="${d.m || 'https://www.google.com/maps/search/?api=1&query=' + mapsQ}" target="_blank" rel="noopener">Abrir no Maps</a></p>
+        </div>
+        <iframe loading="lazy" src="https://www.google.com/maps?q=${mapsQ}&output=embed" title="Mapa"></iframe>
+      </div>
+    </div></section>
+    <footer>© ${new Date().getFullYear()} ${esc(d.n)} · ${esc(d.c || '')}${city ? ' em ' + esc(city) : ''}</footer>
+    <a class="float" href="${wa}" target="_blank" rel="noopener" aria-label="WhatsApp">${waIcon}</a>`;
+})();
+</script>
+</body>
+</html>

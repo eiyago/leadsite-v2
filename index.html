@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LeadSite V2 — Máquina de Conversão</title>
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand"><span class="logo">L2</span><div><b>LeadSite</b> <small>V2</small></div></div>
+    <nav class="tabs" id="nav">
+      <a href="#/buscar" data-view="buscar">Buscar leads</a>
+      <a href="#/pipeline" data-view="pipeline">Pipeline <span class="pill" id="navFollow" hidden></span></a>
+      <a href="#/config" data-view="config">Configurações</a>
+    </nav>
+    <div class="kpis" id="kpis"></div>
+  </header>
+
+  <main>
+    <!-- BUSCAR -->
+    <section class="view" id="view-buscar">
+      <div class="banner" id="demoBanner" hidden>
+        <b>Modo demonstração.</b> Os leads abaixo são fictícios. Cole sua chave do Google em <a href="#/config">Configurações</a> para buscar negócios reais.
+      </div>
+      <form class="panel search" id="searchForm">
+        <label class="f grow2"><span>Categoria</span>
+          <input name="categoria" list="cats" placeholder="Barbearia, Pet shop, Dentista..." required>
+          <datalist id="cats"></datalist>
+        </label>
+        <label class="f grow"><span>Cidade / UF</span><input name="cidade" placeholder="Palmas, TO" required></label>
+        <label class="f grow"><span>Bairro (opcional)</span><input name="bairro" placeholder="Plano Diretor Sul"></label>
+        <label class="f"><span>Quantidade</span>
+          <select name="max"><option>20</option><option selected>40</option><option>60</option></select>
+        </label>
+        <button class="btn primary big" id="btnSearch">Buscar</button>
+      </form>
+
+      <div class="toolbar" id="resultsBar" hidden>
+        <label class="chk"><input type="checkbox" id="selAll"> Selecionar todos</label>
+        <div class="chips" id="filters">
+          <button data-f="all" class="on">Todos</button>
+          <button data-f="semsite">Sem site</button>
+          <button data-f="quente">Quentes</button>
+          <button data-f="celular">Com celular</button>
+          <button data-f="novos">Fora do CRM</button>
+        </div>
+        <div class="spacer"></div>
+        <div class="counts" id="counts"></div>
+        <button class="btn" id="btnCsv">Exportar CSV</button>
+        <button class="btn" id="btnAddSel">Enviar p/ CRM</button>
+        <button class="btn wa" id="btnQueueSel">Abordar em fila</button>
+      </div>
+
+      <div class="grid" id="results"></div>
+      <div class="empty" id="emptySearch">
+        <h2>Encontre negócios que precisam de você</h2>
+        <p>Busque por categoria e cidade. O V2 pontua cada lead pela chance de fechar (sem site + bem avaliado + celular = <b>quente</b>), gera uma <b>prévia de site</b> personalizada e já monta a mensagem de WhatsApp.</p>
+      </div>
+    </section>
+
+    <!-- PIPELINE -->
+    <section class="view" id="view-pipeline" hidden>
+      <div class="todo" id="todo"></div>
+      <div class="toolbar">
+        <input id="crmSearch" class="input" placeholder="Filtrar por nome, cidade, telefone...">
+        <div class="spacer"></div>
+        <button class="btn" id="btnCrmCsv">Exportar CSV</button>
+      </div>
+      <div class="kanban" id="kanban"></div>
+    </section>
+
+    <!-- CONFIG -->
+    <section class="view" id="view-config" hidden>
+      <form class="panel cfg" id="cfgForm">
+        <h2>Fonte de leads</h2>
+        <label class="f"><span>Chave da Google Places API (New)</span>
+          <input name="apiKey" type="password" autocomplete="off" placeholder="AIza...">
+          <small>Fica salva só neste navegador. Restrinja a chave ao domínio do seu GitHub Pages no Google Cloud (veja o README).</small>
+        </label>
+
+        <h2>Você (aparece nas mensagens e na prévia)</h2>
+        <div class="row">
+          <label class="f"><span>Seu nome</span><input name="meuNome" placeholder="João"></label>
+          <label class="f"><span>Sua empresa</span><input name="empresa" placeholder="JS Sites"></label>
+          <label class="f"><span>Seu WhatsApp</span><input name="meuWhats" placeholder="(63) 99999-9999"></label>
+        </div>
+        <div class="row">
+          <label class="f"><span>Preço do site (R$)</span><input name="preco" type="number" min="0"></label>
+          <label class="f"><span>Mensalidade (R$)</span><input name="mensalidade" type="number" min="0"></label>
+          <label class="f"><span>Follow-up após (dias)</span><input name="followupDias" type="number" min="1"></label>
+        </div>
+
+        <h2>Automação</h2>
+        <label class="f"><span>Webhook (n8n, Make, Zapier ou Google Apps Script)</span>
+          <input name="webhook" placeholder="https://...">
+          <small>Recebe um POST a cada lead enviado ao CRM, abordado ou com etapa alterada. Use para gravar em planilha ou disparar WhatsApp automático (Evolution API / Z-API).</small>
+        </label>
+        <label class="f"><span>URL pública do site (opcional)</span>
+          <input name="demoBase" placeholder="https://seuusuario.github.io/leadsite-v2/">
+          <small>Usada para montar o link da prévia. Em branco = endereço atual.</small>
+        </label>
+
+        <h2>Roteiros de mensagem</h2>
+        <p class="muted">Variáveis: {nome} {categoria} {cidade} {nota} {avaliacoes} {link_demo} {meu_nome} {empresa} {preco} {mensalidade} {data_reuniao}</p>
+        <div id="tplEditor"></div>
+
+        <div class="row actions">
+          <button class="btn primary">Salvar</button>
+          <button type="button" class="btn" id="btnTestHook">Testar webhook</button>
+          <button type="button" class="btn" id="btnBackup">Baixar backup</button>
+          <label class="btn file">Restaurar backup<input type="file" id="fileRestore" accept=".json" hidden></label>
+          <button type="button" class="btn danger" id="btnWipe">Apagar CRM</button>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <!-- FICHA DO LEAD -->
+  <div class="overlay" id="drawerBg" hidden></div>
+  <aside class="drawer" id="drawer" hidden>
+    <header>
+      <div class="dh">
+        <span class="score" id="dScore"></span><span class="tag" id="dTemp"></span>
+        <h2 id="dName"></h2>
+      </div>
+      <div class="dnav"><span id="dPos"></span>
+        <button class="icon" id="dPrev" title="Anterior">‹</button>
+        <button class="icon" id="dNext" title="Próximo">›</button>
+        <button class="icon" id="dClose" title="Fechar">✕</button>
+      </div>
+    </header>
+    <nav class="dtabs" id="dTabs">
+      <button data-t="info" class="on">Informações</button>
+      <button data-t="notas">Notas</button>
+      <button data-t="roteiros">Roteiros</button>
+      <button data-t="objecoes">Objeções</button>
+      <button data-t="site">Site</button>
+      <button data-t="venda">Venda</button>
+      <button data-t="agendar">Agendar</button>
+    </nav>
+    <div class="dbody" id="dBody"></div>
+  </aside>
+
+  <!-- FILA DE ABORDAGEM -->
+  <div class="overlay" id="queueBg" hidden></div>
+  <div class="modal" id="queue" hidden>
+    <header><h2>Abordagem em fila <small id="qPos"></small></h2><button class="icon" id="qClose">✕</button></header>
+    <div class="qlead" id="qLead"></div>
+    <label class="f"><span>Roteiro</span><select id="qTpl"></select></label>
+    <textarea id="qMsg" rows="11"></textarea>
+    <div class="row actions">
+      <button class="btn" id="qSkip">Pular</button>
+      <div class="spacer"></div>
+      <button class="btn wa big" id="qSend">Abrir WhatsApp e ir pro próximo →</button>
+    </div>
+    <p class="muted small">Cada clique abre a conversa com a mensagem pronta, move o lead para <b>Abordado</b> e dispara o webhook.</p>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <script src="js/core.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
