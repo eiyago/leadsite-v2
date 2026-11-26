@@ -4,6 +4,26 @@ import { CFG } from './config.js';
 
 let _client = null;
 const cliente = () => (_client ||= new Anthropic({ apiKey: CFG.anthropicKey }));
+
+/* modo sem IA: sem chave ou sem créditos → mensagens de modelo + você assume quem responder */
+let semIA = !CFG.anthropicKey;
+export const modoSemIA = () => semIA;
+function talvezDesligarIA(e) {
+  if (e instanceof Anthropic.AuthenticationError || e instanceof Anthropic.PermissionDeniedError || (e instanceof Anthropic.BadRequestError && /credit|billing|balance/i.test(e.message))) {
+    if (!semIA) console.log('⚠️  Sem créditos/chave da Anthropic: seguindo em MODO SEM IA (você responde quem retornar).');
+    semIA = true;
+  }
+}
+const h = (s) => [...String(s)].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7);
+const nota = (l) => (l.rating ? `${String(l.rating).replace('.', ',')}⭐ com ${l.reviews} avaliações` : '');
+const assinatura = () => `${CFG.meuNome}${CFG.empresa ? ` — ${CFG.empresa}` : ''}`.trim();
+const MODELOS = [
+  (l, k) => `Oi, tudo bem? 👋\n\nVi a *${l.nome}* no Google${nota(l) ? ` (${nota(l)})` : ''}, parabéns pelo trabalho!\nReparei que vocês ainda não têm site, então montei uma prévia de como ficaria:\n${k}\n\nPosso te mostrar como fica no celular?\n${assinatura()}`,
+  (l, k) => `Olá! Tudo certo?\n\nEncontrei a *${l.nome}* pesquisando ${l.categoria.toLowerCase()} em ${l.cidade.split(',')[0]}${nota(l) ? ` — ${nota(l)}, muito bom!` : '.'}\nComo vocês ainda não têm site, tomei a liberdade de fazer uma prévia:\n${k}\n\nO que achou?\n${assinatura()}`,
+  (l, k) => `Oi! Boa tarde 🙂\n\nSou ${CFG.meuNome || 'criador de sites'} e vi a *${l.nome}* no Google Maps${nota(l) ? ` (${nota(l)})` : ''}.\nMontei um site de exemplo com as informações de vocês, dá uma olhada:\n${k}\n\nSe gostar, coloco no ar em 48h.`,
+  (l, k) => `Olá, tudo bem?\n\nPassei pelo perfil da *${l.nome}* no Google${nota(l) ? `, ${nota(l)}` : ''}, e vi que ainda falta um site pra quem procura vocês por lá.\nPreparei uma prévia sem compromisso:\n${k}\n\nPosso te explicar rapidinho como funciona?\n${assinatura()}`,
+];
+const modeloAbertura = (l, k) => MODELOS[h(l.id || l.nome) % MODELOS.length](l, k);
 const MODEL = 'claude-opus-5-5';
 const money = (v) => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
@@ -56,6 +76,11 @@ function fatos(l) {
 }
 
 async function pedir(system, user, schema, maxTokens = 1500) {
+  if (semIA) throw new Error('modo sem IA');
+  try { return await pedirIA(system, user, schema, maxTokens); } catch (e) { talvezDesligarIA(e); throw e; }
+}
+
+async function pedirIA(system, user, schema, maxTokens) {
   const r = await cliente().beta.messages.create({
     model: MODEL,
     max_tokens: maxTokens,
@@ -83,8 +108,8 @@ Escreva a PRIMEIRA mensagem de WhatsApp para o dono deste negócio. Regras:
   try {
     const { mensagem } = await pedir(SISTEMA(), user, ABERTURA_SCHEMA);
     if (mensagem.includes(link)) return mensagem.trim();
-  } catch (e) { console.warn('[ia] abertura com modelo padrão:', e.message); }
-  return `Oi, tudo bem? Vi a *${l.nome}* no Google${l.rating ? ` (${String(l.rating).replace('.', ',')}⭐ com ${l.reviews} avaliações)` : ''} e reparei que vocês ainda não têm site. Montei uma prévia de como ficaria:\n${link}\n\nPosso te mostrar como fica no celular?\n${CFG.meuNome}`;
+  } catch (e) { if (!semIA) console.warn('[ia] abertura com modelo pronto:', e.message); }
+  return modeloAbertura(l, link);
 }
 
 /* conversa: histórico → próxima resposta + ação */
@@ -100,8 +125,9 @@ Escreva a próxima mensagem para o CLIENTE e escolha a ação.`;
   try {
     return await pedir(SISTEMA(), user, SCHEMA);
   } catch (e) {
-    console.warn('[ia] falha ao responder:', e.message);
-    return { resposta: '', acao: 'passar_para_dono', resumo: 'A IA não conseguiu responder; assuma a conversa.' };
+    if (!semIA) console.warn('[ia] falha ao responder:', e.message);
+    const ult = [...(l.conversa || [])].reverse().find((m) => m.papel === 'cliente');
+    return { resposta: '', acao: 'passar_para_dono', resumo: `Respondeu: "${(ult?.texto || '').slice(0, 200)}"${semIA ? ' (modo sem IA: responda você)' : ''}` };
   }
 }
 

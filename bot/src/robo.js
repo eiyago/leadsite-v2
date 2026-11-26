@@ -3,7 +3,7 @@ import { CFG, agoraBR } from './config.js';
 import { DB } from './db.js';
 import { buscar, enriquecer } from './places.js';
 import { linkPrevia } from './site-link.js';
-import { abertura, responder, followup } from './ai.js';
+import { abertura, responder, followup, modoSemIA } from './ai.js';
 import { conectado, enviar, jidDoNumero, onMensagem, onMinhaMensagem } from './wa.js';
 
 const DIA = 864e5;
@@ -114,8 +114,13 @@ async function processarResposta(id) {
   DB.upsert({ id, resumo: r.resumo });
   if (r.acao === 'passar_para_dono') {
     DB.upsert({ id, etapa: 'negociando', passadoEm: new Date().toISOString() });
-    log(`💰 ${l.nome} quer fechar → avisando você`);
-    await avisar(`💰 *Lead pronto para fechar!*\n*${l.nome}* (${l.categoria})\n${r.resumo}\n\nPrévia: ${l.linkPrevia}\nConversa: ${linkChat(l)}\n\nO robô parou de responder esse lead. Agora é com você: efetive o site no app e mande o Pix.`);
+    if (modoSemIA()) {
+      log(`🔥 ${l.nome} respondeu → avisando você`);
+      await avisar(`🔥 *Lead respondeu!*\n*${l.nome}* (${l.categoria}, ${String(l.rating || '').replace('.', ',')}⭐)\n${r.resumo}\n\nPrévia que ele recebeu: ${l.linkPrevia}\nResponder: ${linkChat(l)}\n\nResponda pelo celular do chip. O robô não responde esse lead.`);
+    } else {
+      log(`💰 ${l.nome} quer fechar → avisando você`);
+      await avisar(`💰 *Lead pronto para fechar!*\n*${l.nome}* (${l.categoria})\n${r.resumo}\n\nPrévia: ${l.linkPrevia}\nConversa: ${linkChat(l)}\n\nO robô parou de responder esse lead. Agora é com você: efetive o site no app e mande o Pix.`);
+    }
   } else if (r.acao === 'optout') {
     DB.upsert({ id, etapa: 'optout' });
     log(`🚫 ${l.nome} não quer contato — nunca mais será abordado`);
@@ -191,5 +196,6 @@ export function ligar() {
   onMinhaMensagem(aoMinhaMensagem);
   setInterval(tick, 30e3);
   setTimeout(tick, 8e3);
+  if (modoSemIA()) log('ℹ️  MODO SEM IA: mensagens de modelo; quem responder vai direto para você.');
   log(`🤖 Robô ligado — ${CFG.cidade} · cota de hoje: ${cotaHoje()} abordagens · janela ${CFG.horaInicio}h–${CFG.horaFim}h`);
 }

@@ -32,7 +32,6 @@ if (!CFG.categorias.length) CFG.categorias = ['Barbearia', 'Salão de beleza', '
 
 export function faltando() {
   const f = [];
-  if (!CFG.anthropicKey) f.push('ANTHROPIC_API_KEY');
   if (!CFG.placesKey) f.push('GOOGLE_PLACES_KEY');
   if (!CFG.meuWhats) f.push('MEU_WHATS');
   if (!CFG.meuNome) f.push('MEU_NOME');
