@@ -66,6 +66,8 @@
       <div class="toolbar">
         <input id="crmSearch" class="input" placeholder="Filtrar por nome, cidade, telefone...">
         <div class="spacer"></div>
+        <span class="muted small" id="roboStatus"></span>
+        <button class="btn" id="btnSync">🤖 Sincronizar robô</button>
         <button class="btn" id="btnCrmCsv">Exportar CSV</button>
       </div>
       <div class="kanban" id="kanban"></div>
@@ -98,6 +100,10 @@
           <small>Recebe um POST a cada lead enviado ao CRM, abordado ou com etapa alterada. Use para gravar em planilha ou disparar WhatsApp automático (Evolution API / Z-API).</small>
         </label>
         <label class="chk" style="color:var(--ink)"><input type="checkbox" name="encurtar"> Encurtar links das prévias (is.gd) — o cliente não vê "github" no link</label>
+        <label class="f"><span>Endereço do robô vendedor</span>
+          <input name="roboUrl" placeholder="http://localhost:3210">
+          <small>O robô roda no seu computador (pasta <code>bot</code>). A Pipeline sincroniza com ele sozinha a cada minuto.</small>
+        </label>
         <label class="f"><span>URL pública do site (opcional)</span>
           <input name="demoBase" placeholder="https://seuusuario.github.io/leadsite-v2/">
           <small>Usada para montar o link da prévia. Em branco = endereço atual.</small>

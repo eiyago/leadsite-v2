@@ -1,0 +1,19 @@
+{
+  "name": "leadsite-robo",
+  "version": "1.0.0",
+  "description": "Robô vendedor do LeadSite V2: minera leads quentes sem site, aborda no WhatsApp com prévia premium e conversa com IA até a hora de fechar.",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "check": "node --check src/index.js && node --check src/db.js && node --check src/places.js && node --check src/site-link.js && node --check src/ai.js && node --check src/wa.js && node --check src/robo.js && node --check src/server.js && node --check src/config.js"
+  },
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "@anthropic-ai/sdk": "latest",
+    "@whiskeysockets/baileys": "^6.7.9",
+    "dotenv": "^16.4.5",
+    "pino": "^9.4.0",
+    "qrcode-terminal": "^0.12.0"
+  }
+}

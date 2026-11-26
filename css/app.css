@@ -134,6 +134,12 @@ details.obj summary{cursor:pointer;font-weight:600}
 details.obj p{margin:8px 0}
 .hist{font-size:12px;color:var(--mut)}
 
+/* conversa do robô */
+.chat{display:flex;flex-direction:column;gap:6px;max-height:340px;overflow:auto;background:#efeae2;border-radius:10px;padding:10px}
+.bub{max-width:82%;background:#fff;border-radius:10px 10px 10px 2px;padding:7px 10px;font-size:13px;white-space:pre-wrap;box-shadow:0 1px 1px rgba(0,0,0,.08)}
+.bub.me{align-self:flex-end;background:#dcf8c6;border-radius:10px 10px 2px 10px}
+.bub small{display:block;color:var(--mut);font-size:10px;margin-bottom:2px}
+
 /* aba site */
 .sitebar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:12px 14px}
 .frame{position:relative;overflow:hidden;width:100%;aspect-ratio:1280/900;border-radius:12px;border:1px solid var(--line);background:#111;box-shadow:var(--sh);flex:none}

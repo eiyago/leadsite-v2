@@ -182,6 +182,37 @@ async function openWA(l, text) {
   markContacted(l);
 }
 
+/* ---------------- robô vendedor (roda no seu PC) ---------------- */
+const roboBase = () => (S.cfg.roboUrl || 'http://localhost:3210').replace(/\/$/, '');
+async function syncRobo(silencioso) {
+  try {
+    const [st, leads] = await Promise.all([fetch(roboBase() + '/status').then((r) => r.json()), fetch(roboBase() + '/leads').then((r) => r.json())]);
+    const ordem = LV.STAGES.map((s) => s.id);
+    let novos = 0, atual = 0;
+    for (const b of leads) {
+      if (!b.stage) continue;
+      const cur = S.crm[b.id];
+      const extra = { resumoRobo: b.resumoRobo, conversa: b.conversa, etapaRobo: b.etapaRobo, linkRobo: b.linkPrevia, humano: b.humano };
+      if (!cur) {
+        const { stage, linkPrevia, ...rest } = b;
+        S.crm[b.id] = { ...rest, ...extra, why: [], stage, notas: [], hist: [{ stage, at: LV.now() }], createdAt: b.abordadoEm || LV.now(), lastContact: b.abordadoEm, valor: S.cfg.preco, mensal: S.cfg.mensalidade, robo: true };
+        novos++;
+      } else {
+        Object.assign(cur, extra, { fotos: cur.fotos || b.fotos, avaliacoes: cur.avaliacoes || b.avaliacoes, horarios: cur.horarios || b.horarios, robo: true });
+        if (!['convertido', 'perdido'].includes(cur.stage) && ordem.indexOf(b.stage) > ordem.indexOf(cur.stage)) { setStage(cur.id, b.stage); atual++; }
+        if (b.stage === 'perdido' && cur.stage !== 'perdido' && cur.stage !== 'convertido') { setStage(cur.id, 'perdido'); atual++; }
+      }
+    }
+    saveCRM();
+    $('#roboStatus').textContent = `🤖 ${st.conectado ? 'online' : 'WhatsApp desconectado'}${st.pausado ? ' · pausado' : ''} · hoje ${st.hoje}/${st.cota} · ${st.responderam} responderam · ${st.prontos} p/ fechar`;
+    if (!$('#view-pipeline').hidden) renderPipeline();
+    if (!silencioso || novos || atual) toast(`Robô: ${novos} novos, ${atual} atualizados`);
+  } catch {
+    $('#roboStatus').textContent = '🤖 offline';
+    if (!silencioso) toast('Robô não encontrado. Ele está ligado neste computador?');
+  }
+}
+
 /* ---------------- pipeline ---------------- */
 function renderPipeline() {
   const q = ($('#crmSearch').value || '').toLowerCase();
@@ -324,6 +355,7 @@ async function efetivar(l) {
     await LV.officialLink(S.cfg, l);
     l.efetivado = LV.now();
     if (l.stage !== 'convertido') setStage(l.id, 'convertido');
+    if (l.robo) fetch(roboBase() + '/convertido/' + encodeURIComponent(l.id), { method: 'POST' }).catch(() => { /* robô desligado */ });
     saveCRM(); LV.webhook(S.cfg, 'site.efetivado', l);
     toast('Site efetivado! Agora é oficialmente do cliente.');
   } catch (e) {
@@ -415,6 +447,10 @@ const TABS = {
       <span>Toques</span><div class="muted">${l.toques || 0} mensagem(ns) · último ${l.lastContact ? new Date(l.lastContact).toLocaleString('pt-BR') : 'nunca'}</div>
       <span>Histórico</span><div class="hist">${(l.hist || []).map((h) => `${stageLabel(h.stage)} (${new Date(h.at).toLocaleDateString('pt-BR')})`).join(' → ')}</div>
     </div>
+    ${l.conversa?.length ? `<div class="panel"><b>🤖 Conversa do robô</b> <span class="muted small">${esc(l.etapaRobo || '')}${l.humano ? ' · você assumiu' : ''}</span>
+      ${l.resumoRobo ? `<p class="small" style="margin:6px 0 10px"><b>Resumo:</b> ${esc(l.resumoRobo)}</p>` : ''}
+      <div class="chat">${l.conversa.map((m) => `<div class="bub ${m.papel === 'eu' ? 'me' : ''}"><small>${new Date(m.em).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</small>${esc(m.texto)}</div>`).join('')}</div>
+      ${l.wa ? `<a class="btn wa sm" style="margin-top:10px" href="https://wa.me/${l.wa}" target="_blank" rel="noopener">Abrir conversa no WhatsApp</a>` : ''}</div>` : ''}
     <div><button class="btn danger sm" data-do="remove">Remover do CRM</button></div>`,
 
   notas: (l) => `
@@ -654,7 +690,7 @@ function bindQueue() {
 /* ---------------- configurações ---------------- */
 function renderConfig() {
   const f = $('#cfgForm');
-  ['apiKey', 'meuNome', 'empresa', 'meuWhats', 'preco', 'mensalidade', 'followupDias', 'webhook', 'demoBase'].forEach((k) => (f.elements[k].value = S.cfg[k] ?? ''));
+  ['apiKey', 'meuNome', 'empresa', 'meuWhats', 'preco', 'mensalidade', 'followupDias', 'webhook', 'demoBase', 'roboUrl'].forEach((k) => (f.elements[k].value = S.cfg[k] ?? ''));
   f.elements.encurtar.checked = S.cfg.encurtar !== false;
   $('#tplEditor').innerHTML = Object.entries(LV.TEMPLATES).map(([k, t]) =>
     `<div class="tplrow"><b>${t.label}</b><textarea rows="5" data-tpl="${k}">${esc(S.cfg.templates?.[k] || t.text)}</textarea></div>`).join('');
@@ -664,7 +700,7 @@ function bindConfig() {
   f.onsubmit = (e) => {
     e.preventDefault();
     const c = { ...S.cfg };
-    ['apiKey', 'meuNome', 'empresa', 'meuWhats', 'webhook', 'demoBase'].forEach((k) => (c[k] = f.elements[k].value.trim()));
+    ['apiKey', 'meuNome', 'empresa', 'meuWhats', 'webhook', 'demoBase', 'roboUrl'].forEach((k) => (c[k] = f.elements[k].value.trim()));
     ['preco', 'mensalidade', 'followupDias'].forEach((k) => (c[k] = Number(f.elements[k].value) || 0));
     c.encurtar = f.elements.encurtar.checked;
     c.templates = {};
@@ -718,6 +754,8 @@ function bindResults() {
   };
   $('#btnQueueSel').onclick = () => startQueue((S.sel.size ? selected() : filtered()).filter((l) => !S.crm[l.id] || S.crm[l.id].stage === 'base'));
   $('#crmSearch').oninput = renderPipeline;
+  $('#btnSync').onclick = () => syncRobo(false);
+  setInterval(() => { if (!$('#view-pipeline').hidden && !document.hidden) syncRobo(true); }, 60e3);
   $('#btnCrmCsv').onclick = () => LV.download('crm-leadsite.csv', LV.csv(Object.values(S.crm)), 'text/csv');
 }
 
