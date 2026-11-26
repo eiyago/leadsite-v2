@@ -276,6 +276,7 @@ Qualquer imprevisto é só me avisar por aqui. Até lá!
     if (l.fotos?.length) d.ph = l.fotos;
     if (l.avaliacoes?.length) d.rv = l.avaliacoes;
     if (l.horarios?.length) d.h = l.horarios;
+    if (l.resumo) d.es = l.resumo;
     if (l.sx) Object.entries(l.sx).forEach(([k, v]) => { if (v !== '' && v != null && !(Array.isArray(v) && !v.length)) d[k] = v; });
     return d;
   }
@@ -316,21 +317,20 @@ Qualquer imprevisto é só me avisar por aqui. Até lá!
   /* fotos e avaliações reais do Google (1 consulta de detalhes + até 5 fotos por lead) */
   async function enrich(cfg, l) {
     if (!cfg.apiKey || l.enriched || String(l.id).startsWith('demo_')) return false;
-    const h = { 'X-Goog-Api-Key': cfg.apiKey, 'X-Goog-FieldMask': 'photos,reviews,regularOpeningHours.weekdayDescriptions' };
+    const h = { 'X-Goog-Api-Key': cfg.apiKey, 'X-Goog-FieldMask': 'photos,reviews,regularOpeningHours.weekdayDescriptions,editorialSummary' };
     const r = await fetch(`https://places.googleapis.com/v1/places/${encodeURIComponent(l.id)}?languageCode=pt-BR`, { headers: h });
     const j = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(j.error?.message || 'Falha ao buscar detalhes');
     l.avaliacoes = (j.reviews || []).filter((v) => v.rating >= 4 && v.text?.text).slice(0, 3)
       .map((v) => ({ a: v.authorAttribution?.displayName || 'Cliente', r: v.rating, t: v.text.text.length > 260 ? v.text.text.slice(0, 257).trim() + '…' : v.text.text }));
     if (j.regularOpeningHours?.weekdayDescriptions?.length) l.horarios = j.regularOpeningHours.weekdayDescriptions;
-    const fotos = [];
-    for (const p of (j.photos || []).slice(0, 5)) {
-      try {
-        const pr = await fetch(`https://places.googleapis.com/v1/${p.name}/media?maxWidthPx=1600&skipHttpRedirect=true&key=${encodeURIComponent(cfg.apiKey)}`);
-        const pj = await pr.json(); if (pj.photoUri) fotos.push(pj.photoUri);
-      } catch { /* ignora foto com erro */ }
-    }
-    l.fotos = fotos; l.enriched = now();
+    if (j.editorialSummary?.text) l.resumo = j.editorialSummary.text;
+    // fotos do próprio negócio (o Google devolve até 10, as mais relevantes primeiro); busca em paralelo
+    const nomes = (j.photos || []).slice(0, cfg.maxFotos || 8).map((p) => p.name);
+    const res = await Promise.all(nomes.map((n) =>
+      fetch(`https://places.googleapis.com/v1/${n}/media?maxWidthPx=1800&skipHttpRedirect=true&key=${encodeURIComponent(cfg.apiKey)}`)
+        .then((r) => r.json()).then((pj) => pj.photoUri || null).catch(() => null)));
+    l.fotos = res.filter(Boolean); l.enriched = now();
     return true;
   }
 

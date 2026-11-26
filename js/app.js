@@ -163,7 +163,7 @@ function markContacted(l) {
 const preparing = new Map();
 function prepareLead(l) {
   if (!preparing.has(l.id)) {
-    preparing.set(l.id, LV.prepare(S.cfg, l).then((r) => { if (S.crm[l.id]) { Object.assign(S.crm[l.id], { fotos: l.fotos, avaliacoes: l.avaliacoes, horarios: l.horarios, enriched: l.enriched, short: l.short, shortKey: l.shortKey }); saveCRM(); } return r; })
+    preparing.set(l.id, LV.prepare(S.cfg, l).then((r) => { if (S.crm[l.id]) { Object.assign(S.crm[l.id], { fotos: l.fotos, avaliacoes: l.avaliacoes, horarios: l.horarios, resumo: l.resumo, enriched: l.enriched, short: l.short, shortKey: l.shortKey }); saveCRM(); } return r; })
       .finally(() => preparing.delete(l.id)));
   }
   return preparing.get(l.id);
@@ -424,10 +424,10 @@ const TABS = {
     const tops = [['full', 'Foto de fundo'], ['split', 'Texto + colagem'], ['center', 'Centralizado + carrossel'], ['editorial', 'Editorial (nome gigante)']]
       .map(([v, t]) => `<option value="${v}" ${sx.hl2 === v ? 'selected' : ''}>${t}</option>`).join('');
     const svTxt = (sx.sv || []).map((s) => s.filter(Boolean).join(' | ')).join('\n');
-    const status = l.enriched ? `✅ ${l.fotos?.length || 0} fotos e ${l.avaliacoes?.length || 0} avaliações reais do Google` : (S.cfg.apiKey ? '⏳ Buscando fotos e avaliações reais do Google…' : 'ℹ️ Sem chave do Google: usando fotos do banco de imagens');
+    const status = l.enriched ? `✅ ${l.fotos?.length || 0} fotos próprias, ${l.avaliacoes?.length || 0} avaliações reais${l.horarios?.length ? ', horários' : ''}${l.resumo ? ' e descrição' : ''} do Google${(l.fotos?.length || 0) < 6 ? ' (completado com banco de imagens)' : ''}` : (S.cfg.apiKey ? '⏳ Buscando fotos e avaliações reais do Google…' : 'ℹ️ Sem chave do Google: usando fotos do banco de imagens');
     return `
     <div class="panel sitebar">
-      <div><b>Prévia premium</b> <span class="muted small">· ${esc(P.nk)} · topo "${esc(P.hero)}" · ${esc(P.font.d)}</span><br><span class="small muted">${status}</span></div>
+      <div><b>Prévia premium</b> <span class="muted small">· ${esc(P.nk)} · direção <b>${esc(P.dirLabel)}</b> · ${esc(P.font.d)}</span><br><span class="small muted">${status}</span></div>
       <div class="spacer"></div>
       <button class="btn" data-do="reroll" title="Gera outra combinação de layout, cores e fontes">🎲 Outro visual</button>
       <a class="btn" href="${esc(LV.demoLink(S.cfg, l))}" target="_blank" rel="noopener">Abrir</a>
@@ -447,6 +447,7 @@ const TABS = {
       <label class="f"><span>Serviços e preços — um por linha: Nome | descrição | preço</span><textarea data-sx="sv" rows="5" placeholder="${esc(P.svc.map((s) => s.slice(0, 2).join(' | ') + ' | R$ 50').join('\n'))}">${esc(svTxt)}</textarea></label>
       <div class="row">
         <label class="f"><span>Nicho</span><select data-sx="k"><option value="">Automático</option>${nichos}</select></label>
+        <label class="f"><span>Direção visual</span><select data-sx="dir"><option value="">Automática</option>${Object.entries(LSite.DIRS).map(([k, v]) => `<option value="${k}" ${sx.dir === k ? 'selected' : ''}>${v.label}</option>`).join('')}</select></label>
         <label class="f"><span>Topo</span><select data-sx="hl2"><option value="">Automático</option>${tops}</select></label>
         <label class="f"><span>Fonte</span><select data-sx="f"><option value="">Automática</option>${fontes}</select></label>
         <label class="f"><span>Cor de destaque</span><input type="color" data-sx="ac" value="${esc(sx.ac || P.pal.ac)}"></label>
@@ -568,7 +569,7 @@ function bindDrawer() {
       sendObj: () => openWA(l, obj[1]),
       copyLink: async () => { toast('Gerando link curto…'); try { await prepareLead(l); } catch { /* ok */ } copy(LV.linkFor(S.cfg, l)); renderDrawer(); },
       sendSite: () => openWA(l, msgFor(l, LV.autoTemplate(l))),
-      reroll: () => { l.sx = l.sx || {}; l.sx.v = (l.sx.v || 0) + 1; ['hl2', 'f', 'ac'].forEach((k) => delete l.sx[k]); saveCRM(); },
+      reroll: () => { l.sx = l.sx || {}; l.sx.v = (l.sx.v || 0) + 1; ['hl2', 'f', 'ac', 'dir'].forEach((k) => delete l.sx[k]); saveCRM(); },
       resetSx: () => { const keep = l.sx?.cr; l.sx = keep === 0 ? { cr: 0 } : {}; saveCRM(); },
       efetivar: () => efetivar(l),
       baixarZip: () => baixarZip(l),
