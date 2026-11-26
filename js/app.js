@@ -199,7 +199,8 @@ function renderPipeline() {
     return `<div class="col" data-stage="${st.id}">
       <h3>${st.label} <small>${items.length}${st.id === 'convertido' && tot ? ' · ' + money(tot) : ''}</small></h3>
       ${items.map((l) => `<div class="kc ${l.temp}" draggable="true" data-id="${esc(l.id)}">
-        <b>${esc(l.nome)}</b>
+        <button class="kx" title="${st.id === 'perdido' ? 'Remover do CRM' : 'Não fechou → Perdido'}">×</button>
+        <b>${esc(l.nome)}</b>${l.oficial ? ' <span class="tag t-crm" style="font-size:10px">site no ar</span>' : ''}
         <small>${l.score} · ${esc(l.categoria)} · ${esc(l.cidade)}</small>
         <small>${esc(l.telefone || '—')}</small>
         ${isDue(l) ? '<span class="due">⏰ follow-up pendente</span>' : ''}
@@ -213,6 +214,12 @@ function bindKanban() {
   const k = $('#kanban');
   k.addEventListener('click', (e) => {
     const c = e.target.closest('.kc'); if (!c) return;
+    if (e.target.closest('.kx')) {
+      const l = S.crm[c.dataset.id]; if (!l) return;
+      if (l.stage === 'perdido') { delete S.crm[l.id]; saveCRM(); toast(`${l.nome} removido do CRM`); }
+      else { setStage(l.id, 'perdido'); toast(`${l.nome} → Perdido`); }
+      renderPipeline(); return;
+    }
     const ids = $$('.kc', k).map((x) => x.dataset.id);
     openDrawer(c.dataset.id, ids);
   });
@@ -272,8 +279,10 @@ function renderDrawer() {
 
 function refreshPreview(l) {
   const f = $('#sitePrev'); if (!f) return;
-  const box = f.parentElement, s = Math.min(1, box.clientWidth / 1280);
-  box.style.setProperty('--s', s); box.style.height = Math.round(900 * s) + 'px';
+  const box = f.parentElement;
+  const fit = () => { if (box.clientWidth) box.style.setProperty('--s', Math.min(1, box.clientWidth / 1280)); };
+  fit(); requestAnimationFrame(fit);
+  if (!box._ro && window.ResizeObserver) { box._ro = new ResizeObserver(fit); box._ro.observe(box); }
   const y = f.contentWindow?.scrollY || 0;
   f.srcdoc = LSite.page(LV.siteData(S.cfg, l), { exported: false });
   f.onload = () => { try { f.contentWindow.scrollTo(0, y); } catch { /* ok */ } };
@@ -291,11 +300,25 @@ function parseSv(txt) {
   return txt.split('\n').map((x) => x.split('|').map((s) => s.trim())).filter((a) => a[0]).map((a) => [a[0], a[1] || '', a[2] || '']);
 }
 
+/* efetivar: mesmo site, sem prévia, com link oficial; lead vira Convertido */
 async function efetivar(l) {
-  const btn = $('[data-do="efetivar"]'); if (btn) { btn.disabled = true; btn.textContent = 'Gerando site…'; }
+  const btn = $('[data-do="efetivar"]'); if (btn) { btn.disabled = true; btn.textContent = 'Efetivando…'; }
+  try {
+    await LV.officialLink(S.cfg, l);
+    l.efetivado = LV.now();
+    if (l.stage !== 'convertido') setStage(l.id, 'convertido');
+    saveCRM(); LV.webhook(S.cfg, 'site.efetivado', l);
+    toast('Site efetivado! Agora é oficialmente do cliente.');
+  } catch (e) {
+    toast('Erro ao efetivar: ' + e.message);
+  } finally { if (S.drawer.tab === 'site') renderDrawer(); }
+}
+
+async function baixarZip(l) {
+  const btn = $('[data-do="baixarZip"]'); if (btn) { btn.disabled = true; btn.textContent = 'Gerando arquivos…'; }
   try {
     try { await prepareLead(l); } catch { /* segue */ }
-    const d = { ...LV.siteData(S.cfg, l) };
+    const d = { ...LV.siteData(S.cfg, l), x: 1 };
     const P = LSite.plan(d);
     const urls = P.photos.slice(0, 8);
     const files = []; const local = [];
@@ -314,11 +337,10 @@ async function efetivar(l) {
     const blob = zip([{ name: 'index.html', data: enc.encode(html) }, ...files, { name: 'COMO-PUBLICAR.txt', data: enc.encode(leia) }]);
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `site-${slug}.zip`; a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-    l.efetivado = LV.now(); saveCRM(); LV.webhook(S.cfg, 'site.efetivado', l);
-    toast(`Site efetivado: site-${slug}.zip (${files.length} fotos embutidas)`);
+    toast(`Arquivos baixados: site-${slug}.zip (${files.length} fotos embutidas)`);
   } catch (e) {
-    toast('Erro ao gerar o site: ' + e.message);
-  } finally { if (S.drawer.tab === 'site') renderDrawer(); }
+    toast('Erro ao gerar os arquivos: ' + e.message);
+  } finally { if (btn) { btn.disabled = false; btn.textContent = '⬇ Baixar arquivos (.zip)'; } }
 }
 
 /* zip simples (sem compressão) para entregar index.html + fotos */
@@ -432,14 +454,24 @@ const TABS = {
       <div class="row actions"><button class="btn sm" data-do="resetSx">Voltar ao automático</button></div>
     </details>
     <div class="panel efetivar">
-      <h3 style="margin:0 0 6px">Efetivar o site do cliente</h3>
-      <p class="muted" style="margin:0 0 10px">Gera o site final <b>sem a faixa de prévia</b>, com as fotos embutidas, SEO (título, descrição e dados de empresa para o Google) e pronto para hospedar no domínio do cliente. Baixa um .zip com o <code>index.html</code>.</p>
+      <h3 style="margin:0 0 6px">${l.oficial ? '✅ Site efetivado — é oficialmente do cliente' : 'Efetivar o site do cliente'}</h3>
+      <p class="muted" style="margin:0 0 10px">${l.oficial
+        ? 'Este é o mesmo site da prévia, sem a faixa de prévia e liberado para aparecer no Google. Envie o link para o dono.'
+        : 'Mantém <b>exatamente o mesmo site</b> que você está vendo e só tira o que é de prévia (a faixa "Prévia por…" e o bloqueio do Google). Gera o link oficial e move o lead para <b>Convertido</b>.'}</p>
       <label class="chk"><input type="checkbox" id="crOn" ${sx.cr === 0 ? '' : 'checked'}> Incluir "Site por ${esc(S.cfg.empresa || S.cfg.meuNome || 'você')}" no rodapé</label>
-      <div class="row actions"><button class="btn primary big" data-do="efetivar">⬇ Efetivar e baixar site</button>
-      ${l.efetivado ? `<span class="muted small">Efetivado em ${new Date(l.efetivado).toLocaleDateString('pt-BR')}</span>` : ''}</div>
-      <details class="small muted"><summary>Como colocar no ar (2 min, grátis)</summary>
-        <ol><li>Descompacte o .zip.</li><li>Acesse <b>app.netlify.com/drop</b> e arraste a pasta. O site fica no ar na hora.</li><li>Em <i>Domain settings</i>, conecte o domínio do cliente (ex.: <i>barbeariaking.com.br</i>, registrado no registro.br).</li></ol>
-        Também funciona em Vercel, Hostinger ou qualquer hospedagem: é só enviar os arquivos.</details>
+      ${l.oficial ? `
+      <label class="f" style="margin-top:10px"><span>Link oficial do site${l.oficialKey !== LV.siteKey(S.cfg, l) ? ' — <b style="color:#c0262d">você editou o site depois; clique em Atualizar</b>' : ''}</span><input readonly value="${esc(l.oficial)}" onclick="this.select()"></label>
+      <div class="row actions">
+        <button class="btn" data-do="copyOficial">Copiar</button>
+        <a class="btn" href="${esc(l.oficial)}" target="_blank" rel="noopener">Abrir</a>
+        ${l.oficialKey !== LV.siteKey(S.cfg, l) ? '<button class="btn primary" data-do="efetivar">Atualizar link oficial</button>' : ''}
+        <div class="spacer"></div>
+        <button class="btn wa big" data-do="sendOficial" ${l.wa ? '' : 'disabled'}>Entregar ao dono no WhatsApp</button>
+      </div>` : `
+      <div class="row actions"><button class="btn primary big" data-do="efetivar">✅ Efetivar site</button></div>`}
+      <details class="small muted" style="margin-top:8px"><summary>Quer colocar no domínio próprio do cliente (ex.: barbeariaking.com.br)?</summary>
+        <p>Baixe os arquivos do mesmo site (com as fotos embutidas), arraste a pasta em <b>app.netlify.com/drop</b> e conecte o domínio registrado no registro.br.</p>
+        <button class="btn sm" data-do="baixarZip">⬇ Baixar arquivos (.zip)</button></details>
     </div>`;
   },
 
@@ -507,7 +539,7 @@ function bindDrawer() {
   body.addEventListener('change', (e) => {
     const l = S.crm[S.drawer.id]; const t = e.target;
     if (t.dataset.sx) { setSx(l, t); if (t.tagName === 'SELECT') renderDrawer(); return; }
-    if (t.id === 'crOn') { l.sx = l.sx || {}; if (t.checked) delete l.sx.cr; else l.sx.cr = 0; saveCRM(); return; }
+    if (t.id === 'crOn') { l.sx = l.sx || {}; if (t.checked) delete l.sx.cr; else l.sx.cr = 0; saveCRM(); renderDrawer(); return; }
     if (t.id === 'tplSel') { S.drawer.tpl = t.value; renderDrawer(); return; }
     const f = t.dataset.field; if (!f) return;
     l[f] = t.type === 'number' ? Number(t.value) : t.type === 'datetime-local' ? (t.value ? new Date(t.value).toISOString() : '') : t.value;
@@ -539,13 +571,16 @@ function bindDrawer() {
       reroll: () => { l.sx = l.sx || {}; l.sx.v = (l.sx.v || 0) + 1; ['hl2', 'f', 'ac'].forEach((k) => delete l.sx[k]); saveCRM(); },
       resetSx: () => { const keep = l.sx?.cr; l.sx = keep === 0 ? { cr: 0 } : {}; saveCRM(); },
       efetivar: () => efetivar(l),
+      baixarZip: () => baixarZip(l),
+      copyOficial: () => copy(l.oficial),
+      sendOficial: () => openWA(l, msgFor(l, 'entrega')),
       copyProp: () => copy($('#propTxt').value),
       sendProp: () => { openWA(l, $('#propTxt').value); if (l.stage !== 'convertido') setStage(l.id, 'agendado'); },
       ics: () => LV.download(`reuniao-${l.nome.replace(/\W+/g, '-')}.ics`, icsFile(l), 'text/calendar'),
       confirm: () => openWA(l, msgFor(l, 'confirmacao')),
     };
     acts[b.dataset.do]?.();
-    if (!['copy', 'copyObj', 'copyLink', 'copyProp', 'ics', 'sendTpl', 'sendObj', 'efetivar', 'sendSite', 'wa', 'sendProp', 'confirm'].includes(b.dataset.do)) renderDrawer();
+    if (!['copy', 'copyObj', 'copyLink', 'copyProp', 'ics', 'sendTpl', 'sendObj', 'efetivar', 'baixarZip', 'copyOficial', 'sendOficial', 'sendSite', 'wa', 'sendProp', 'confirm'].includes(b.dataset.do)) renderDrawer();
   });
 }
 

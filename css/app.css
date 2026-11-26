@@ -102,7 +102,10 @@ textarea{resize:vertical;line-height:1.5}
 .col h3 small{color:var(--mut);font-weight:500}
 .kc{background:#fff;border-radius:10px;padding:10px;box-shadow:var(--sh);cursor:pointer;display:flex;flex-direction:column;gap:4px;border-left:3px solid transparent}
 .kc.quente{border-left-color:var(--hot)}.kc.morno{border-left-color:var(--warm)}.kc.frio{border-left-color:var(--cold)}
-.kc b{font-size:13px}.kc small{color:var(--mut);font-size:12px}
+.kc{position:relative}
+.kc b{font-size:13px;padding-right:16px}
+.kx{position:absolute;top:4px;right:4px;width:20px;height:20px;border:0;border-radius:6px;background:transparent;color:var(--mut);font-size:15px;line-height:1;cursor:pointer;opacity:.45;transition:.2s}
+.kc:hover .kx{opacity:1}.kx:hover{background:#fde8e8;color:#c0262d}.kc small{color:var(--mut);font-size:12px}
 .kc .due{color:var(--hot);font-weight:700;font-size:11px}
 .kc.dragging{opacity:.4}
 
@@ -133,7 +136,7 @@ details.obj p{margin:8px 0}
 
 /* aba site */
 .sitebar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:12px 14px}
-.frame{position:relative;overflow:hidden;border-radius:12px;border:1px solid var(--line);background:#111;box-shadow:var(--sh);flex:none}
+.frame{position:relative;overflow:hidden;width:100%;aspect-ratio:1280/900;border-radius:12px;border:1px solid var(--line);background:#111;box-shadow:var(--sh);flex:none}
 .frame iframe{position:absolute;top:0;left:0;width:1280px;height:900px;border:0;transform:scale(var(--s,.5));transform-origin:0 0}
 details.edit{display:flex;flex-direction:column;gap:10px}
 details.edit[open]{display:flex}

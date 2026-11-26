@@ -83,6 +83,15 @@ Se mudar de ideia, é só me chamar que coloco no ar em 48h. Sucesso!`,
 
 Posso seguir?`,
     },
+    entrega: {
+      label: 'Entrega do site (efetivado)',
+      text: `Prontinho! 🎉 O site da *{nome}* já está no ar:
+👉 {link_oficial}
+
+Pode compartilhar no Instagram, no Google e mandar para os clientes. Qualquer ajuste é só me chamar por aqui.
+
+{meu_nome} — {empresa}`,
+    },
     confirmacao: {
       label: 'Confirmação de reunião',
       text: `Combinado! ✅ Nossa conversa sobre o site da *{nome}* ficou para {data_reuniao}.
@@ -276,8 +285,8 @@ Qualquer imprevisto é só me avisar por aqui. Até lá!
   const demoLink = (cfg, l) => `${demoBase(cfg)}?d=${b64url(siteData(cfg, l))}`;
 
   // link compactado (deflate) — bem menor, ideal para encurtar
-  async function packedLink(cfg, l) {
-    const json = JSON.stringify(siteData(cfg, l));
+  async function packedLink(cfg, l, extra) {
+    const json = JSON.stringify({ ...siteData(cfg, l), ...(extra || {}) });
     if (window.CompressionStream) {
       const stream = new Blob([json]).stream().pipeThrough(new CompressionStream('deflate-raw'));
       return `${demoBase(cfg)}?s=z${b64u(new Uint8Array(await new Response(stream).arrayBuffer()))}`;
@@ -335,13 +344,24 @@ Qualquer imprevisto é só me avisar por aqui. Até lá!
     l.short = short || long; l.shortKey = key;
     return l.short;
   }
+  /* site oficial: exatamente o mesmo site, sem a faixa de prévia e liberado para o Google */
+  async function officialLink(cfg, l) {
+    try { await enrich(cfg, l); } catch (e) { console.warn('enrich', e); }
+    const key = siteKey(cfg, l);
+    if (l.oficial && l.oficialKey === key) return l.oficial;
+    const long = await packedLink(cfg, l, { x: 1 });
+    const short = cfg.encurtar === false ? null : await shorten(long);
+    l.oficial = short || long; l.oficialKey = key;
+    return l.oficial;
+  }
   const linkFor = (cfg, l) => (l.short && l.shortKey === siteKey(cfg, l) ? l.short : demoLink(cfg, l));
 
   function vars(cfg, l, extra = {}) {
     return {
       nome: l.nome, categoria: (l.categoria || '').toLowerCase(), cidade: l.cidade, endereco: l.endereco,
       nota: l.rating ? String(l.rating).replace('.', ',') : '5', avaliacoes: l.reviews || 0,
-      link_demo: linkFor(cfg, l), meu_nome: cfg.meuNome || '', empresa: cfg.empresa || '',
+      link_demo: linkFor(cfg, l),
+      link_oficial: l.oficial || linkFor(cfg, l), meu_nome: cfg.meuNome || '', empresa: cfg.empresa || '',
       meu_whats: cfg.meuWhats || '', preco: money(l.valor || cfg.preco), mensalidade: money(l.mensal || cfg.mensalidade),
       data_reuniao: l.agenda ? new Date(l.agenda).toLocaleString('pt-BR', { dateStyle: 'full', timeStyle: 'short' }) : '(data a combinar)',
       ...extra,
@@ -383,6 +403,6 @@ Qualquer imprevisto é só me avisar por aqui. Até lá!
   return {
     STAGES, TEMPLATES, OBJECOES, loadConfig, saveConfig, loadCRM, saveCRM, loadLast, saveLast,
     esc, money, now, phoneInfo, score, normalize, searchPlaces, demoPlaces,
-    message, render, vars, waLink, demoLink, linkFor, prepare, enrich, siteData, autoTemplate, webhook, csv, download,
+    message, render, vars, waLink, demoLink, linkFor, prepare, officialLink, siteKey, enrich, siteData, autoTemplate, webhook, csv, download,
   };
 })();

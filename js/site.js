@@ -257,7 +257,8 @@ var LSite = (function () {
 
   /* ---------- HTML ---------- */
   function page(d, opts) {
-    opts = opts || {};
+    opts = Object.assign({}, opts || {});
+    if (d.x) opts.exported = true; // site efetivado: sem faixa de prévia, liberado para o Google
     d = Object.assign({}, d, { n: d.dn || cleanName(d.n) });
     var P = plan(d), N = P.N, ph = P.photos, r = P.r;
     var tel = String(d.t || '').replace(/\D/g, ''); if (tel.indexOf('55') === 0 && tel.length >= 12) tel = tel.slice(2);
