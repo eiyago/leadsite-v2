@@ -118,7 +118,7 @@ function cardHTML(l) {
     <div class="cact">
       <button class="btn wa" data-act="wa" ${l.wa ? '' : 'disabled'}>WhatsApp</button>
       <button class="btn" data-act="crm">${inCrm ? 'Abrir ficha' : '+ CRM'}</button>
-      <a class="btn" data-act="demo" href="${esc(LV.demoLink(S.cfg, l))}" target="_blank" rel="noopener">Prévia</a>
+      <button class="btn" data-act="site">Site</button>
     </div>
   </article>`;
 }
@@ -159,9 +159,26 @@ function markContacted(l) {
   saveCRM(); LV.webhook(S.cfg, 'lead.contacted', lead);
 }
 
-function openWA(l, text) {
+/* prepara fotos/avaliações reais + link curto; salva no CRM */
+const preparing = new Map();
+function prepareLead(l) {
+  if (!preparing.has(l.id)) {
+    preparing.set(l.id, LV.prepare(S.cfg, l).then((r) => { if (S.crm[l.id]) { Object.assign(S.crm[l.id], { fotos: l.fotos, avaliacoes: l.avaliacoes, horarios: l.horarios, enriched: l.enriched, short: l.short, shortKey: l.shortKey }); saveCRM(); } return r; })
+      .finally(() => preparing.delete(l.id)));
+  }
+  return preparing.get(l.id);
+}
+
+/* abre o WhatsApp já com o link curto (a janela abre no clique para não ser bloqueada) */
+async function openWA(l, text) {
   if (!l.wa) return toast('Lead sem telefone');
-  window.open(LV.waLink(l, text), '_blank', 'noopener');
+  const before = LV.linkFor(S.cfg, l);
+  const win = window.open('', '_blank');
+  if (win) win.document.write('<p style="font:16px system-ui;padding:40px;color:#555">Preparando a prévia e abrindo o WhatsApp…</p>');
+  try { await prepareLead(l); } catch { /* segue com o link longo */ }
+  const final = (typeof text === 'function' ? text() : text).split(before).join(LV.linkFor(S.cfg, l));
+  const url = LV.waLink(l, final);
+  if (win) win.location.href = url; else window.open(url, '_blank');
   markContacted(l);
 }
 
@@ -221,6 +238,18 @@ function openDrawer(id, list) {
   S.drawer = { id, tab: S.drawer.tab || 'info', list: list || [id] };
   $('#drawer').hidden = $('#drawerBg').hidden = false;
   renderDrawer();
+  warmLead(S.crm[id]);
+}
+
+/* busca fotos/avaliações e link curto em segundo plano e atualiza a ficha */
+function warmLead(l) {
+  if (!l) return;
+  const before = LV.linkFor(S.cfg, l);
+  prepareLead(l).then(() => {
+    const after = LV.linkFor(S.cfg, l);
+    swapLinks(before, after);
+    if (S.drawer.id === l.id && !$('#drawer').hidden && S.drawer.tab === 'site' && !document.activeElement?.dataset?.sx) renderDrawer();
+  }).catch(() => { /* ok */ });
 }
 function closeDrawer() {
   $('#drawer').hidden = $('#drawerBg').hidden = true;
@@ -238,6 +267,84 @@ function renderDrawer() {
   $('#dPrev').disabled = i <= 0; $('#dNext').disabled = i >= list.length - 1;
   $$('#dTabs button').forEach((b) => b.classList.toggle('on', b.dataset.t === tab));
   $('#dBody').innerHTML = TABS[tab](l);
+  if (tab === 'site') refreshPreview(l);
+}
+
+function refreshPreview(l) {
+  const f = $('#sitePrev'); if (!f) return;
+  const box = f.parentElement, s = Math.min(1, box.clientWidth / 1280);
+  box.style.setProperty('--s', s); box.style.height = Math.round(900 * s) + 'px';
+  const y = f.contentWindow?.scrollY || 0;
+  f.srcdoc = LSite.page(LV.siteData(S.cfg, l), { exported: false });
+  f.onload = () => { try { f.contentWindow.scrollTo(0, y); } catch { /* ok */ } };
+}
+let prevTimer;
+const refreshSoon = (l) => { clearTimeout(prevTimer); prevTimer = setTimeout(() => refreshPreview(l), 450); };
+
+/* troca o link antigo pelo novo dentro dos textos abertos na ficha */
+function swapLinks(before, after) {
+  if (before === after) return;
+  $$('#dBody textarea, #qMsg').forEach((t) => { if (t.value.includes(before)) t.value = t.value.split(before).join(after); });
+}
+
+function parseSv(txt) {
+  return txt.split('\n').map((x) => x.split('|').map((s) => s.trim())).filter((a) => a[0]).map((a) => [a[0], a[1] || '', a[2] || '']);
+}
+
+async function efetivar(l) {
+  const btn = $('[data-do="efetivar"]'); if (btn) { btn.disabled = true; btn.textContent = 'Gerando site…'; }
+  try {
+    try { await prepareLead(l); } catch { /* segue */ }
+    const d = { ...LV.siteData(S.cfg, l) };
+    const P = LSite.plan(d);
+    const urls = P.photos.slice(0, 8);
+    const files = []; const local = [];
+    for (let i = 0; i < urls.length; i++) {
+      try {
+        const r = await fetch(urls[i], { mode: 'cors' }); if (!r.ok) throw 0;
+        const buf = new Uint8Array(await r.arrayBuffer());
+        const name = `img/foto-${i + 1}.jpg`; files.push({ name, data: buf }); local.push(name);
+      } catch { local.push(urls[i]); }
+    }
+    d.ph = local; // mesma ordem de fotos, agora dentro do site
+    const html = LSite.page(d, { exported: true });
+    const slug = (l.sx?.dn || l.nome).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'site';
+    const leia = `SITE ${l.sx?.dn || l.nome}\r\n\r\nComo colocar no ar:\r\n1. Acesse https://app.netlify.com/drop e arraste esta pasta.\r\n2. Em Domain settings, conecte o dominio do cliente (registro.br).\r\n\r\nArquivos: index.html (site completo) e pasta img/ (fotos).\r\nGerado pelo LeadSite V2 em ${new Date().toLocaleString('pt-BR')}.\r\n`;
+    const enc = new TextEncoder();
+    const blob = zip([{ name: 'index.html', data: enc.encode(html) }, ...files, { name: 'COMO-PUBLICAR.txt', data: enc.encode(leia) }]);
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `site-${slug}.zip`; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    l.efetivado = LV.now(); saveCRM(); LV.webhook(S.cfg, 'site.efetivado', l);
+    toast(`Site efetivado: site-${slug}.zip (${files.length} fotos embutidas)`);
+  } catch (e) {
+    toast('Erro ao gerar o site: ' + e.message);
+  } finally { if (S.drawer.tab === 'site') renderDrawer(); }
+}
+
+/* zip simples (sem compressão) para entregar index.html + fotos */
+function crc32(buf) {
+  let crc = -1;
+  for (let i = 0; i < buf.length; i++) { let c = (crc ^ buf[i]) & 0xff; for (let k = 0; k < 8; k++) c = c & 1 ? (c >>> 1) ^ 0xedb88320 : c >>> 1; crc = (crc >>> 8) ^ c; }
+  return (crc ^ -1) >>> 0;
+}
+function zip(files) {
+  const parts = [], central = []; let offset = 0; const enc = new TextEncoder();
+  for (const f of files) {
+    const name = enc.encode(f.name), crc = crc32(f.data), size = f.data.length;
+    const h = new DataView(new ArrayBuffer(30));
+    h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true); h.setUint16(12, 0x21, true);
+    h.setUint32(14, crc, true); h.setUint32(18, size, true); h.setUint32(22, size, true); h.setUint16(26, name.length, true);
+    parts.push(h, name, f.data);
+    const c = new DataView(new ArrayBuffer(46));
+    c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true); c.setUint16(8, 0x0800, true); c.setUint16(14, 0x21, true);
+    c.setUint32(16, crc, true); c.setUint32(20, size, true); c.setUint32(24, size, true); c.setUint16(28, name.length, true); c.setUint32(42, offset, true);
+    central.push(c, name);
+    offset += 30 + name.length + size;
+  }
+  const csize = central.reduce((a, p) => a + p.byteLength, 0);
+  const e = new DataView(new ArrayBuffer(22));
+  e.setUint32(0, 0x06054b50, true); e.setUint16(8, files.length, true); e.setUint16(10, files.length, true); e.setUint32(12, csize, true); e.setUint32(16, offset, true);
+  return new Blob([...parts, ...central, e], { type: 'application/zip' });
 }
 
 const google = (q) => `https://www.google.com/search?q=${encodeURIComponent(q)}`;
@@ -287,13 +394,53 @@ const TABS = {
       <button class="btn sm wa" data-do="sendObj" data-i="${i}" ${l.wa ? '' : 'disabled'}>Responder no WhatsApp</button></details>`).join(''),
 
   site: (l) => {
-    const link = LV.demoLink(S.cfg, l);
+    const sx = l.sx || {};
+    const link = LV.linkFor(S.cfg, l);
+    const P = LSite.plan(LV.siteData(S.cfg, l));
+    const nichos = LS_NICHE_ORDER.map((k) => `<option value="${k}" ${sx.k === k ? 'selected' : ''}>${k}</option>`).join('');
+    const fontes = LS_FONTS.map((f, i) => `<option value="${i}" ${String(sx.f) === String(i) ? 'selected' : ''}>${f.d}</option>`).join('');
+    const tops = [['full', 'Foto de fundo'], ['split', 'Texto + colagem'], ['center', 'Centralizado + carrossel'], ['editorial', 'Editorial (nome gigante)']]
+      .map(([v, t]) => `<option value="${v}" ${sx.hl2 === v ? 'selected' : ''}>${t}</option>`).join('');
+    const svTxt = (sx.sv || []).map((s) => s.filter(Boolean).join(' | ')).join('\n');
+    const status = l.enriched ? `✅ ${l.fotos?.length || 0} fotos e ${l.avaliacoes?.length || 0} avaliações reais do Google` : (S.cfg.apiKey ? '⏳ Buscando fotos e avaliações reais do Google…' : 'ℹ️ Sem chave do Google: usando fotos do banco de imagens');
     return `
-    <div class="panel"><p style="margin-top:0">Prévia de site gerada automaticamente com os dados do Google deste negócio. Mande o link na abordagem: o dono vê o próprio negócio com site pronto — é o gatilho mais forte de conversão.</p>
-      <input readonly value="${esc(link)}" onclick="this.select()">
-      <div class="row actions"><a class="btn primary" href="${esc(link)}" target="_blank" rel="noopener">Abrir prévia</a><button class="btn" data-do="copyLink">Copiar link</button><div class="spacer"></div>
-      <button class="btn wa" data-do="sendSite" ${l.wa ? '' : 'disabled'}>Enviar prévia no WhatsApp</button></div></div>
-    <iframe src="${esc(link)}" style="width:100%;height:520px;border:1px solid var(--line);border-radius:12px;background:#fff"></iframe>`;
+    <div class="panel sitebar">
+      <div><b>Prévia premium</b> <span class="muted small">· ${esc(P.nk)} · topo "${esc(P.hero)}" · ${esc(P.font.d)}</span><br><span class="small muted">${status}</span></div>
+      <div class="spacer"></div>
+      <button class="btn" data-do="reroll" title="Gera outra combinação de layout, cores e fontes">🎲 Outro visual</button>
+      <a class="btn" href="${esc(LV.demoLink(S.cfg, l))}" target="_blank" rel="noopener">Abrir</a>
+    </div>
+    <div class="frame"><iframe id="sitePrev" title="Prévia do site"></iframe></div>
+    <div class="panel">
+      <label class="f"><span>Link para enviar ${l.short && link === l.short ? '(curto ✅)' : '(será encurtado ao enviar)'}</span><input readonly value="${esc(link)}" onclick="this.select()"></label>
+      <div class="row actions"><button class="btn" data-do="copyLink">Copiar link</button><div class="spacer"></div>
+      <button class="btn wa" data-do="sendSite" ${l.wa ? '' : 'disabled'}>Enviar prévia no WhatsApp</button></div>
+    </div>
+    <details class="panel edit" open><summary><b>Personalizar o site</b> <span class="muted small">(tudo opcional — em branco usa o automático)</span></summary>
+      <div class="row"><label class="f"><span>Nome exibido</span><input data-sx="dn" value="${esc(sx.dn || '')}" placeholder="${esc(l.nome)}"></label>
+        <label class="f"><span>Instagram</span><input data-sx="ig" value="${esc(sx.ig || '')}" placeholder="@perfil"></label></div>
+      <label class="f"><span>Título principal</span><input data-sx="hl" value="${esc(sx.hl || '')}" placeholder="${esc(P.head)}"></label>
+      <label class="f"><span>Subtítulo</span><input data-sx="sub" value="${esc(sx.sub || '')}" placeholder="${esc(P.sub)}"></label>
+      <label class="f"><span>Texto "Sobre"</span><textarea data-sx="ab" rows="3" placeholder="${esc(P.about.join(' '))}">${esc(sx.ab || '')}</textarea></label>
+      <label class="f"><span>Serviços e preços — um por linha: Nome | descrição | preço</span><textarea data-sx="sv" rows="5" placeholder="${esc(P.svc.map((s) => s.slice(0, 2).join(' | ') + ' | R$ 50').join('\n'))}">${esc(svTxt)}</textarea></label>
+      <div class="row">
+        <label class="f"><span>Nicho</span><select data-sx="k"><option value="">Automático</option>${nichos}</select></label>
+        <label class="f"><span>Topo</span><select data-sx="hl2"><option value="">Automático</option>${tops}</select></label>
+        <label class="f"><span>Fonte</span><select data-sx="f"><option value="">Automática</option>${fontes}</select></label>
+        <label class="f"><span>Cor de destaque</span><input type="color" data-sx="ac" value="${esc(sx.ac || P.pal.ac)}"></label>
+      </div>
+      <div class="row actions"><button class="btn sm" data-do="resetSx">Voltar ao automático</button></div>
+    </details>
+    <div class="panel efetivar">
+      <h3 style="margin:0 0 6px">Efetivar o site do cliente</h3>
+      <p class="muted" style="margin:0 0 10px">Gera o site final <b>sem a faixa de prévia</b>, com as fotos embutidas, SEO (título, descrição e dados de empresa para o Google) e pronto para hospedar no domínio do cliente. Baixa um .zip com o <code>index.html</code>.</p>
+      <label class="chk"><input type="checkbox" id="crOn" ${sx.cr === 0 ? '' : 'checked'}> Incluir "Site por ${esc(S.cfg.empresa || S.cfg.meuNome || 'você')}" no rodapé</label>
+      <div class="row actions"><button class="btn primary big" data-do="efetivar">⬇ Efetivar e baixar site</button>
+      ${l.efetivado ? `<span class="muted small">Efetivado em ${new Date(l.efetivado).toLocaleDateString('pt-BR')}</span>` : ''}</div>
+      <details class="small muted"><summary>Como colocar no ar (2 min, grátis)</summary>
+        <ol><li>Descompacte o .zip.</li><li>Acesse <b>app.netlify.com/drop</b> e arraste a pasta. O site fica no ar na hora.</li><li>Em <i>Domain settings</i>, conecte o domínio do cliente (ex.: <i>barbeariaking.com.br</i>, registrado no registro.br).</li></ol>
+        Também funciona em Vercel, Hostinger ou qualquer hospedagem: é só enviar os arquivos.</details>
+    </div>`;
   },
 
   venda: (l) => `
@@ -341,14 +488,26 @@ const copy = (t) => navigator.clipboard.writeText(t).then(() => toast('Copiado!'
 
 function bindDrawer() {
   $('#dClose').onclick = closeDrawer; $('#drawerBg').onclick = closeDrawer;
-  $('#dPrev').onclick = () => { const { list, id } = S.drawer; S.drawer.id = list[list.indexOf(id) - 1]; S.drawer.tpl = null; renderDrawer(); };
-  $('#dNext').onclick = () => { const { list, id } = S.drawer; S.drawer.id = list[list.indexOf(id) + 1]; S.drawer.tpl = null; renderDrawer(); };
+  const go = (step) => { const { list, id } = S.drawer; const next = list[list.indexOf(id) + step]; if (!next) return; S.drawer.tpl = null; openDrawer(next, list); };
+  $('#dPrev').onclick = () => go(-1);
+  $('#dNext').onclick = () => go(1);
   $('#dTabs').onclick = (e) => { const b = e.target.closest('button'); if (!b) return; S.drawer.tab = b.dataset.t; renderDrawer(); };
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (!$('#queue').hidden) closeQueue(); else if (!$('#drawer').hidden) closeDrawer(); } });
 
   const body = $('#dBody');
+  const setSx = (l, t) => {
+    const k = t.dataset.sx; l.sx = l.sx || {};
+    let v = t.value;
+    if (k === 'sv') v = parseSv(v);
+    if (k === 'f') v = v === '' ? null : Number(v);
+    if (v === '' || v == null) delete l.sx[k]; else l.sx[k] = v;
+    saveCRM(); refreshSoon(l);
+  };
+  body.addEventListener('input', (e) => { if (e.target.dataset.sx && e.target.tagName !== 'SELECT') setSx(S.crm[S.drawer.id], e.target); });
   body.addEventListener('change', (e) => {
     const l = S.crm[S.drawer.id]; const t = e.target;
+    if (t.dataset.sx) { setSx(l, t); if (t.tagName === 'SELECT') renderDrawer(); return; }
+    if (t.id === 'crOn') { l.sx = l.sx || {}; if (t.checked) delete l.sx.cr; else l.sx.cr = 0; saveCRM(); return; }
     if (t.id === 'tplSel') { S.drawer.tpl = t.value; renderDrawer(); return; }
     const f = t.dataset.field; if (!f) return;
     l[f] = t.type === 'number' ? Number(t.value) : t.type === 'datetime-local' ? (t.value ? new Date(t.value).toISOString() : '') : t.value;
@@ -375,15 +534,18 @@ function bindDrawer() {
       sendTpl: () => openWA(l, $('#tplTxt').value),
       copyObj: () => copy(obj[1]),
       sendObj: () => openWA(l, obj[1]),
-      copyLink: () => copy(LV.demoLink(S.cfg, l)),
+      copyLink: async () => { toast('Gerando link curto…'); try { await prepareLead(l); } catch { /* ok */ } copy(LV.linkFor(S.cfg, l)); renderDrawer(); },
       sendSite: () => openWA(l, msgFor(l, LV.autoTemplate(l))),
+      reroll: () => { l.sx = l.sx || {}; l.sx.v = (l.sx.v || 0) + 1; ['hl2', 'f', 'ac'].forEach((k) => delete l.sx[k]); saveCRM(); },
+      resetSx: () => { const keep = l.sx?.cr; l.sx = keep === 0 ? { cr: 0 } : {}; saveCRM(); },
+      efetivar: () => efetivar(l),
       copyProp: () => copy($('#propTxt').value),
       sendProp: () => { openWA(l, $('#propTxt').value); if (l.stage !== 'convertido') setStage(l.id, 'agendado'); },
       ics: () => LV.download(`reuniao-${l.nome.replace(/\W+/g, '-')}.ics`, icsFile(l), 'text/calendar'),
       confirm: () => openWA(l, msgFor(l, 'confirmacao')),
     };
     acts[b.dataset.do]?.();
-    if (!['copy', 'copyObj', 'copyLink', 'copyProp', 'ics', 'sendTpl', 'sendObj'].includes(b.dataset.do)) renderDrawer();
+    if (!['copy', 'copyObj', 'copyLink', 'copyProp', 'ics', 'sendTpl', 'sendObj', 'efetivar', 'sendSite', 'wa', 'sendProp', 'confirm'].includes(b.dataset.do)) renderDrawer();
   });
 }
 
@@ -404,7 +566,10 @@ function renderQueue() {
   $('#qPos').textContent = `${q.i + 1} de ${q.leads.length}`;
   $('#qLead').innerHTML = `<b>${esc(l.nome)}</b> <span class="score s-${l.temp}">${l.score}</span> <span class="tag ${SITE_TAG[l.siteTipo][0]}">${SITE_TAG[l.siteTipo][1]}</span><br><small class="muted">${esc(l.telefone)} · ★ ${l.rating} (${l.reviews}) ${crm ? '· ' + stageLabel(crm.stage) : ''}</small>`;
   const key = q.tpl === 'auto' ? LV.autoTemplate(l) : q.tpl;
-  $('#qMsg').value = msgFor(crm || l, key);
+  const lead = crm || l;
+  $('#qMsg').value = msgFor(lead, key);
+  const before = LV.linkFor(S.cfg, lead);
+  prepareLead(lead).then(() => { if (S.queue && S.queue.leads[S.queue.i] === l) swapLinks(before, LV.linkFor(S.cfg, lead)); }).catch(() => { /* ok */ });
 }
 function closeQueue() {
   $('#queue').hidden = $('#queueBg').hidden = true; S.queue = null;
@@ -421,6 +586,7 @@ function bindQueue() {
 function renderConfig() {
   const f = $('#cfgForm');
   ['apiKey', 'meuNome', 'empresa', 'meuWhats', 'preco', 'mensalidade', 'followupDias', 'webhook', 'demoBase'].forEach((k) => (f.elements[k].value = S.cfg[k] ?? ''));
+  f.elements.encurtar.checked = S.cfg.encurtar !== false;
   $('#tplEditor').innerHTML = Object.entries(LV.TEMPLATES).map(([k, t]) =>
     `<div class="tplrow"><b>${t.label}</b><textarea rows="5" data-tpl="${k}">${esc(S.cfg.templates?.[k] || t.text)}</textarea></div>`).join('');
 }
@@ -431,6 +597,7 @@ function bindConfig() {
     const c = { ...S.cfg };
     ['apiKey', 'meuNome', 'empresa', 'meuWhats', 'webhook', 'demoBase'].forEach((k) => (c[k] = f.elements[k].value.trim()));
     ['preco', 'mensalidade', 'followupDias'].forEach((k) => (c[k] = Number(f.elements[k].value) || 0));
+    c.encurtar = f.elements.encurtar.checked;
     c.templates = {};
     $$('[data-tpl]').forEach((t) => { if (t.value.trim() !== LV.TEMPLATES[t.dataset.tpl].text) c.templates[t.dataset.tpl] = t.value; });
     S.cfg = c; LV.saveConfig(c); renderKpis(); toast('Configurações salvas');
@@ -468,6 +635,7 @@ function bindResults() {
     const act = e.target.closest('[data-act]')?.dataset.act;
     if (act === 'wa') { openWA(S.crm[l.id] || l, msgFor(S.crm[l.id] || l, LV.autoTemplate(l))); renderResults(); }
     if (act === 'crm' || act === 'open') openDrawer(l.id, filtered().map((r) => r.id));
+    if (act === 'site') { S.drawer.tab = 'site'; openDrawer(l.id, filtered().map((r) => r.id)); }
   });
   const selected = () => S.results.filter((l) => S.sel.has(l.id));
   $('#btnCsv').onclick = () => {

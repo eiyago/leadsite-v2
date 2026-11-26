@@ -108,7 +108,7 @@ textarea{resize:vertical;line-height:1.5}
 
 /* drawer */
 .overlay{position:fixed;inset:0;background:rgba(15,20,35,.35);z-index:40}
-.drawer{position:fixed;top:0;right:0;bottom:0;width:min(760px,100%);background:var(--bg);z-index:50;display:flex;flex-direction:column;box-shadow:-10px 0 40px rgba(0,0,0,.15)}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(960px,100%);background:var(--bg);z-index:50;display:flex;flex-direction:column;box-shadow:-10px 0 40px rgba(0,0,0,.15)}
 .drawer>header{display:flex;align-items:center;gap:10px;padding:14px 18px;background:#fff}
 .dh{display:flex;align-items:center;gap:8px;flex:1;min-width:0}
 .dh h2{margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -130,6 +130,19 @@ details.obj{background:#fff;border:1px solid var(--line);border-radius:10px;padd
 details.obj summary{cursor:pointer;font-weight:600}
 details.obj p{margin:8px 0}
 .hist{font-size:12px;color:var(--mut)}
+
+/* aba site */
+.sitebar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:12px 14px}
+.frame{position:relative;overflow:hidden;border-radius:12px;border:1px solid var(--line);background:#111;box-shadow:var(--sh);flex:none}
+.frame iframe{position:absolute;top:0;left:0;width:1280px;height:900px;border:0;transform:scale(var(--s,.5));transform-origin:0 0}
+details.edit{display:flex;flex-direction:column;gap:10px}
+details.edit[open]{display:flex}
+details.edit summary{cursor:pointer;margin-bottom:6px}
+details.edit .f{margin-top:8px}
+details.edit input[type=color]{height:40px;padding:3px}
+.efetivar{border:2px solid var(--ac);background:linear-gradient(135deg,#fff,#f3f6ff)}
+.efetivar ol{margin:6px 0;padding-left:18px}
+code{background:var(--bg);padding:1px 5px;border-radius:5px;font-size:12px}
 
 /* modal fila */
 .modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(620px,94vw);max-height:92vh;overflow:auto;background:#fff;border-radius:16px;z-index:60;padding:18px;display:flex;flex-direction:column;gap:12px;box-shadow:0 20px 60px rgba(0,0,0,.25)}

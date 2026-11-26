@@ -113,6 +113,7 @@ Qualquer imprevisto é só me avisar por aqui. Até lá!
     webhook: '',
     demoBase: '',
     followupDias: 2,
+    encurtar: true,
     templates: {},
   };
 
@@ -245,30 +246,102 @@ Qualquer imprevisto é só me avisar por aqui. Até lá!
   const tpl = (cfg, key) => (cfg.templates && cfg.templates[key]) || TEMPLATES[key]?.text || '';
   const autoTemplate = (l) => (l.siteTipo === 'sem' ? 'abertura_semsite' : l.siteTipo === 'social' ? 'abertura_social' : 'abertura_comsite');
 
-  function b64url(obj) {
-    const s = btoa(unescape(encodeURIComponent(JSON.stringify(obj))));
-    return s.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-  }
+  const b64u = (bytes) => {
+    let s = ''; for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+    return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  };
+  const b64url = (obj) => b64u(new TextEncoder().encode(JSON.stringify(obj)));
+  const hashStr = (s) => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36); };
 
   function demoBase(cfg) {
     if (cfg.demoBase) return cfg.demoBase.replace(/\/?$/, '/') + 'demo.html';
-    return new URL('demo.html', location.href).href.split('#')[0];
+    return new URL('demo.html', location.href).href.split('#')[0].split('?')[0];
   }
 
-  function demoLink(cfg, l) {
-    // link curto: só o essencial (horários e mapa a página monta sozinha)
-    const d = { n: l.nome, c: l.categoria, ci: l.cidade, t: l.telefone, a: l.endereco.replace(/, Brasil$|, \d{5}-\d{3}/g, ''), r: l.rating, u: l.reviews };
+  /* dados que o site do lead usa (prévia e site efetivado) */
+  function siteData(cfg, l) {
+    const d = { n: l.nome, c: l.categoria, ci: l.cidade, t: l.telefone, a: (l.endereco || '').replace(/, Brasil$|, \d{5}-\d{3}/g, ''), r: l.rating, u: l.reviews };
     if (/cid=/.test(l.maps || '')) d.m = l.maps;
     const s = cfg.empresa || cfg.meuNome; if (s) d.s = s;
     const w = phoneInfo(cfg.meuWhats).wa; if (w) d.w = w;
-    return `${demoBase(cfg)}?d=${b64url(d)}`;
+    if (l.fotos?.length) d.ph = l.fotos;
+    if (l.avaliacoes?.length) d.rv = l.avaliacoes;
+    if (l.horarios?.length) d.h = l.horarios;
+    if (l.sx) Object.entries(l.sx).forEach(([k, v]) => { if (v !== '' && v != null && !(Array.isArray(v) && !v.length)) d[k] = v; });
+    return d;
   }
+  const siteKey = (cfg, l) => hashStr(JSON.stringify(siteData(cfg, l)));
+
+  // link longo síncrono (usado no iframe e como reserva)
+  const demoLink = (cfg, l) => `${demoBase(cfg)}?d=${b64url(siteData(cfg, l))}`;
+
+  // link compactado (deflate) — bem menor, ideal para encurtar
+  async function packedLink(cfg, l) {
+    const json = JSON.stringify(siteData(cfg, l));
+    if (window.CompressionStream) {
+      const stream = new Blob([json]).stream().pipeThrough(new CompressionStream('deflate-raw'));
+      return `${demoBase(cfg)}?s=z${b64u(new Uint8Array(await new Response(stream).arrayBuffer()))}`;
+    }
+    return `${demoBase(cfg)}?s=j${b64u(new TextEncoder().encode(json))}`;
+  }
+
+  function jsonp(url) {
+    return new Promise((res, rej) => {
+      const cb = 'lvcb' + Math.random().toString(36).slice(2);
+      const s = document.createElement('script');
+      const done = () => { clearTimeout(t); delete window[cb]; s.remove(); };
+      const t = setTimeout(() => { done(); rej(new Error('timeout')); }, 8000);
+      window[cb] = (d) => { done(); res(d); };
+      s.onerror = () => { done(); rej(new Error('falhou')); };
+      s.src = url + '&callback=' + cb;
+      document.head.appendChild(s);
+    });
+  }
+  async function shorten(long) {
+    for (const host of ['https://is.gd', 'https://v.gd']) {
+      try { const r = await jsonp(`${host}/create.php?format=json&url=${encodeURIComponent(long)}`); if (r && r.shorturl) return r.shorturl; } catch { /* tenta o próximo */ }
+    }
+    return null;
+  }
+
+  /* fotos e avaliações reais do Google (1 consulta de detalhes + até 5 fotos por lead) */
+  async function enrich(cfg, l) {
+    if (!cfg.apiKey || l.enriched || String(l.id).startsWith('demo_')) return false;
+    const h = { 'X-Goog-Api-Key': cfg.apiKey, 'X-Goog-FieldMask': 'photos,reviews,regularOpeningHours.weekdayDescriptions' };
+    const r = await fetch(`https://places.googleapis.com/v1/places/${encodeURIComponent(l.id)}?languageCode=pt-BR`, { headers: h });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error?.message || 'Falha ao buscar detalhes');
+    l.avaliacoes = (j.reviews || []).filter((v) => v.rating >= 4 && v.text?.text).slice(0, 3)
+      .map((v) => ({ a: v.authorAttribution?.displayName || 'Cliente', r: v.rating, t: v.text.text.length > 260 ? v.text.text.slice(0, 257).trim() + '…' : v.text.text }));
+    if (j.regularOpeningHours?.weekdayDescriptions?.length) l.horarios = j.regularOpeningHours.weekdayDescriptions;
+    const fotos = [];
+    for (const p of (j.photos || []).slice(0, 5)) {
+      try {
+        const pr = await fetch(`https://places.googleapis.com/v1/${p.name}/media?maxWidthPx=1600&skipHttpRedirect=true&key=${encodeURIComponent(cfg.apiKey)}`);
+        const pj = await pr.json(); if (pj.photoUri) fotos.push(pj.photoUri);
+      } catch { /* ignora foto com erro */ }
+    }
+    l.fotos = fotos; l.enriched = now();
+    return true;
+  }
+
+  /* prepara o lead para envio: dados reais + link compactado + link curto */
+  async function prepare(cfg, l) {
+    try { await enrich(cfg, l); } catch (e) { console.warn('enrich', e); }
+    const key = siteKey(cfg, l);
+    if (l.short && l.shortKey === key) return l.short;
+    const long = await packedLink(cfg, l);
+    let short = cfg.encurtar === false ? null : await shorten(long);
+    l.short = short || long; l.shortKey = key;
+    return l.short;
+  }
+  const linkFor = (cfg, l) => (l.short && l.shortKey === siteKey(cfg, l) ? l.short : demoLink(cfg, l));
 
   function vars(cfg, l, extra = {}) {
     return {
       nome: l.nome, categoria: (l.categoria || '').toLowerCase(), cidade: l.cidade, endereco: l.endereco,
       nota: l.rating ? String(l.rating).replace('.', ',') : '5', avaliacoes: l.reviews || 0,
-      link_demo: demoLink(cfg, l), meu_nome: cfg.meuNome || '', empresa: cfg.empresa || '',
+      link_demo: linkFor(cfg, l), meu_nome: cfg.meuNome || '', empresa: cfg.empresa || '',
       meu_whats: cfg.meuWhats || '', preco: money(l.valor || cfg.preco), mensalidade: money(l.mensal || cfg.mensalidade),
       data_reuniao: l.agenda ? new Date(l.agenda).toLocaleString('pt-BR', { dateStyle: 'full', timeStyle: 'short' }) : '(data a combinar)',
       ...extra,
@@ -289,7 +362,7 @@ Qualquer imprevisto é só me avisar por aqui. Até lá!
     const { reasons, ...l } = lead;
     return fetch(cfg.webhook, {
       method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ event, at: now(), lead: { ...l, link_demo: demoLink(cfg, lead) } }),
+      body: JSON.stringify({ event, at: now(), lead: { ...l, fotos: undefined, avaliacoes: undefined, link_demo: linkFor(cfg, lead) } }),
     }).then(() => true).catch(() => false);
   }
 
@@ -310,6 +383,6 @@ Qualquer imprevisto é só me avisar por aqui. Até lá!
   return {
     STAGES, TEMPLATES, OBJECOES, loadConfig, saveConfig, loadCRM, saveCRM, loadLast, saveLast,
     esc, money, now, phoneInfo, score, normalize, searchPlaces, demoPlaces,
-    message, render, vars, waLink, demoLink, autoTemplate, webhook, csv, download,
+    message, render, vars, waLink, demoLink, linkFor, prepare, enrich, siteData, autoTemplate, webhook, csv, download,
   };
 })();

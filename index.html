@@ -97,6 +97,7 @@
           <input name="webhook" placeholder="https://...">
           <small>Recebe um POST a cada lead enviado ao CRM, abordado ou com etapa alterada. Use para gravar em planilha ou disparar WhatsApp automático (Evolution API / Z-API).</small>
         </label>
+        <label class="chk" style="color:var(--ink)"><input type="checkbox" name="encurtar"> Encurtar links das prévias (is.gd) — o cliente não vê "github" no link</label>
         <label class="f"><span>URL pública do site (opcional)</span>
           <input name="demoBase" placeholder="https://seuusuario.github.io/leadsite-v2/">
           <small>Usada para montar o link da prévia. Em branco = endereço atual.</small>
@@ -160,6 +161,8 @@
 
   <div class="toast" id="toast" hidden></div>
 
+  <script src="js/niches.js"></script>
+  <script src="js/site.js"></script>
   <script src="js/core.js"></script>
   <script src="js/app.js"></script>
 </body>

@@ -17,6 +17,16 @@ Minera negócios locais no Google, pontua a chance de fechar, gera uma **prévia
 | Agendar | Google Agenda + .ics + mensagem de confirmação |
 | Limite de 40 leads/mês | Sem limite (só a cota da sua chave do Google) |
 
+## Sites premium (aba Site)
+
+- **16 nichos** com textos, paletas, fontes e fotos próprias: barbearia, salão, estética, hamburgueria, pizzaria, café/padaria, restaurante, academia, pet, odontologia, clínica, oficina, escritório (advocacia/contabilidade), imobiliária, obras/serviços e genérico.
+- **Nenhum site igual ao outro**: cada negócio recebe uma combinação própria de layout do topo (4), lista de serviços (3), paleta, fonte (8 pares), cantos e ordem de seções. O botão **🎲 Outro visual** sorteia outra combinação.
+- **Motion**: título entrando palavra por palavra, zoom lento na foto, parallax, faixa rolando, contadores animados, brilho seguindo o mouse, galeria com lightbox, barra de progresso, menu mobile animado e botão de WhatsApp pulsando.
+- **Dados reais**: com a chave do Google, a prévia usa as **fotos e as avaliações reais** do negócio (nada de depoimento inventado).
+- **Personalizar**: nome, título, subtítulo, texto "Sobre", serviços com preço, Instagram, nicho, topo, fonte e cor.
+- **Efetivar**: baixa um `.zip` com `index.html` + fotos, sem a faixa de prévia, com SEO (título, descrição, Open Graph e dados de empresa para o Google). Arraste em app.netlify.com/drop e conecte o domínio do cliente.
+- **Link curto**: ao enviar, o link da prévia é compactado e encurtado no is.gd (o cliente não vê "github"). Dá para desligar em Configurações.
+
 ## Publicar no GitHub Pages (5 min)
 
 1. Crie um repositório (ex.: `leadsite-v2`) e envie todos os arquivos desta pasta.
