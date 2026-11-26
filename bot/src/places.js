@@ -23,10 +23,19 @@ function score(l) {
 
 const FIELDS = ['places.id', 'places.displayName', 'places.formattedAddress', 'places.nationalPhoneNumber', 'places.websiteUri', 'places.rating', 'places.userRatingCount', 'places.googleMapsUri', 'places.primaryTypeDisplayName', 'places.businessStatus', 'nextPageToken'].join(',');
 
-export async function buscar(categoria, cidade, max = 60) {
+/* lead de fora: acha o negócio pelo nome no Google (1º resultado) */
+export async function buscarNegocio(texto, cidade) {
+  const [p] = await buscar(null, cidade, 1, `${texto} ${cidade}`);
+  if (p) p.categoria = p.tipoGoogle || 'Negócio local';
+  return p || null;
+}
+
+export { phoneInfo as telefoneInfo, siteTipo as tipoDeSite, score as pontuar };
+
+export async function buscar(categoria, cidade, max = 60, consulta) {
   const out = []; let pageToken;
   while (out.length < max) {
-    const body = { textQuery: `${categoria} em ${cidade}`, languageCode: 'pt-BR', regionCode: 'BR', pageSize: 20 };
+    const body = { textQuery: consulta || `${categoria} em ${cidade}`, languageCode: 'pt-BR', regionCode: 'BR', pageSize: Math.min(20, max) };
     if (pageToken) body.pageToken = pageToken;
     const r = await fetch('https://places.googleapis.com/v1/places:searchText', {
       method: 'POST',

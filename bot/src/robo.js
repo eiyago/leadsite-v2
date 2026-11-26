@@ -1,7 +1,7 @@
 /* o vendedor: minera, aborda aos poucos, faz follow-up, conversa e te chama na hora de fechar */
 import { CFG, agoraBR } from './config.js';
 import { DB } from './db.js';
-import { buscar, enriquecer } from './places.js';
+import { buscar, enriquecer, buscarNegocio, telefoneInfo, pontuar } from './places.js';
 import { linkPrevia } from './site-link.js';
 import { abertura, responder, followup, modoSemIA } from './ai.js';
 import { conectado, enviar, jidDoNumero, onMensagem, onMinhaMensagem } from './wa.js';
@@ -67,7 +67,7 @@ async function proximoNovo() {
   // escolhe o nicho menos abordado nas últimas 24h; dentro dele, o lead mais quente
   const recentes = DB.leads().filter((l) => l.abordadoEm && dias(l.abordadoEm) < 1);
   const usos = (c) => recentes.filter((l) => l.categoria === c).length;
-  return fila.sort((a, b) => usos(a.categoria) - usos(b.categoria) || b.score - a.score || b.reviews - a.reviews)[0];
+  return fila.sort((a, b) => (b.manual ? 1 : 0) - (a.manual ? 1 : 0) || usos(a.categoria) - usos(b.categoria) || b.score - a.score || b.reviews - a.reviews)[0];
 }
 
 function proximoFollowup() {
@@ -149,7 +149,7 @@ async function aoReceber({ jid, alt, texto }) {
   const dig = (j) => String(j || '').split('@')[0].split(':')[0];
   // comandos seus, do seu WhatsApp pessoal
   if (CFG.meuWhats && [dig(jid), dig(alt)].some((d) => d && (d === CFG.meuWhats || d === '55' + CFG.meuWhats || '55' + d === CFG.meuWhats))) {
-    return comando(texto.trim().toLowerCase());
+    return comando(texto.trim().toLowerCase(), texto.trim());
   }
   const l = DB.porJid(jid) || (alt && DB.porJid(alt));
   if (!l) return; // conversa que não é de lead do robô
@@ -175,7 +175,7 @@ function aoMinhaMensagem({ jid, alt }) {
   if (l && !l.humano) { DB.upsert({ id: l.id, humano: true }); log(`🙋 Você assumiu a conversa com ${l.nome}; o robô não responde mais esse lead.`); }
 }
 
-async function comando(c) {
+async function comando(c, original = c) {
   const t = agoraBR();
   if (c.startsWith('/pausar')) { DB.setMeta('pausado', true); return avisar('⏸️ Robô pausado. Mande /retomar para voltar.'); }
   if (c.startsWith('/retomar')) { DB.setMeta('pausado', false); return avisar('▶️ Robô retomado.'); }
@@ -184,10 +184,52 @@ async function comando(c) {
     return avisar(`📊 *Robô LeadSite*\nHoje: ${DB.enviadosHoje(t.data)}/${cotaHoje()} abordagens\nNa fila: ${n('fila')}\nAbordados: ${all.filter((l) => l.abordadoEm).length}\nResponderam: ${all.filter((l) => l.respondeu).length}\nConversando: ${n('conversando')}\nProntos p/ fechar: ${n('negociando')}\nSem interesse: ${n('optout')}\n${DB.meta.pausado ? '⏸️ PAUSADO' : '▶️ rodando'}`);
   }
   if (c.startsWith('/teste')) return teste();
-  if (c.startsWith('/')) return avisar('Comandos: /status, /pausar, /retomar, /teste');
+  if (c.startsWith('/lead')) {
+    const [busca, telefone, instagram] = original.slice(5).split('|').map((s) => s.trim());
+    try {
+      const r = await leadManual({ busca, telefone, instagram });
+      if (r.jaAbordado) return avisar(`ℹ️ *${r.lead}* já foi abordado antes.\nPrévia: ${r.link}`);
+      if (r.naFila) return avisar(`➕ *${r.lead}* adicionado. Sai em ~${r.emMin} min (respeitando o intervalo entre mensagens).`);
+      return avisar(`✅ *${r.lead}* abordado agora!\nPrévia que ele recebeu: ${r.link}`);
+    } catch (e) { return avisar(`⚠️ /lead: ${e.message}\nUso: /lead Nome do negócio | telefone (opcional) | @instagram (opcional)`); }
+  }
+  if (c.startsWith('/')) return avisar('Comandos: /status, /pausar, /retomar, /teste, /lead Nome | telefone | @insta');
 }
 
 /* teste de ponta a ponta: lead real, prévia real, mensagem real — mas enviada para VOCÊ */
+/* lead que VOCÊ trouxe de fora: busca no Google pelo nome, completa com o que você passar e aborda.
+   Não passa pelo filtro de "quente/sem site" e não conta na cota automática. */
+export async function leadManual({ busca, telefone, instagram, categoria }) {
+  if (!busca) throw new Error('informe o nome do negócio');
+  let l = null;
+  try { l = await buscarNegocio(busca, CFG.cidade); } catch (e) { log('[manual] busca falhou:', e.message); }
+  const ph = telefoneInfo(telefone || l?.telefone);
+  if (!ph.wa) throw new Error('não achei telefone; mande junto: /lead Nome | (45) 99999-9999');
+  if (!l) l = { id: 'manual_' + ph.digits, nome: busca, cidade: CFG.cidade, endereco: '', rating: 0, reviews: 0, site: '', maps: '' };
+  if (categoria) l.categoria = categoria;
+  if (!l.categoria) l.categoria = 'Negócio local';
+  Object.assign(l, { telefone: telefone || l.telefone, telDigits: ph.digits, wa: ph.wa, mobile: ph.mobile });
+  if (instagram && (!l.site || l.siteTipo === 'sem')) { l.site = `https://instagram.com/${String(instagram).replace(/^@|https?:\/\/(www\.)?instagram\.com\//g, '').replace(/\/$/, '')}`; l.siteTipo = 'social'; }
+  Object.assign(l, pontuar(l));
+  const existente = DB.lead(l.id);
+  if (existente?.abordadoEm) return { lead: existente.nome, jaAbordado: true, link: existente.linkPrevia };
+  DB.upsert({ ...l, etapa: 'fila', manual: true, mineradoEm: new Date().toISOString() });
+  log(`➕ Lead manual: ${l.nome} (${l.categoria}${l.rating ? `, ${l.rating}⭐` : ''})`);
+
+  const falta = 5 * 60e3 - (Date.now() - (DB.meta.ultimoEnvio || 0));
+  if (falta > 0 || ocupado || !conectado()) {
+    DB.setMeta('proximoEnvio', Math.min(DB.meta.proximoEnvio || Infinity, Date.now() + Math.max(falta, 60e3)));
+    return { lead: l.nome, naFila: true, emMin: Math.ceil(Math.max(falta, 60e3) / 60e3) };
+  }
+  ocupado = true;
+  try {
+    if (!(await abordar(DB.lead(l.id)))) throw new Error('esse número não tem WhatsApp');
+    DB.meta.ultimoEnvio = Date.now();
+    const s = DB.lead(l.id);
+    return { lead: s.nome, categoria: s.categoria, nota: s.rating, link: s.linkPrevia, mensagem: s.conversa?.at(-1)?.texto };
+  } finally { ocupado = false; }
+}
+
 /* aborda o próximo lead agora (respeitando a cota do dia) e reagenda o ritmo normal */
 export async function abordarAgora() {
   const t = agoraBR();
