@@ -28,6 +28,47 @@ var LSite = (function () {
     ig: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="17.5" cy="6.5" r="1.2" fill="currentColor"/></svg>',
     star: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="m12 2.8 2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg>',
   };
+  /* ícones de marca por nicho (traço, 24x24) */
+  var MARK = {
+    barbearia: '<circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4 8.1 15.9M14.5 14.5 20 20M8.1 8.1 12 12"/>',
+    salao: '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 15l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z"/>',
+    estetica: '<path d="M5 19c0-8 6-14 15-14 0 9-6 15-14 15"/><path d="M5 19 14 10"/>',
+    hamburgueria: '<path d="M4 11c0-4 3.6-6 8-6s8 2 8 6z"/><path d="M3 14.5h18"/><path d="M4 17.5h16c0 1.7-1.3 2.5-3 2.5H7c-1.7 0-3-.8-3-2.5z"/>',
+    pizzaria: '<path d="M12 21 3.5 6.5a15 15 0 0 1 17 0z"/><path d="M5.6 9.6a12 12 0 0 1 12.8 0"/><circle cx="11" cy="12.5" r="1"/><circle cx="13.6" cy="15.6" r="1"/>',
+    cafe: '<path d="M4 9h13v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M17 11h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M8 3v3M12 3v3"/>',
+    restaurante: '<path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10"/><path d="M17 21V3c-2 1.5-3 4-3 7v3h3"/>',
+    academia: '<path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/>',
+    pet: '<circle cx="7" cy="9" r="1.8"/><circle cx="11" cy="5.5" r="1.8"/><circle cx="16" cy="6.5" r="1.8"/><circle cx="18.5" cy="11" r="1.8"/><path d="M12 11c-3 0-6 4.5-6 7a2.5 2.5 0 0 0 3.5 2.2c1.6-.6 3.4-.6 5 0A2.5 2.5 0 0 0 18 18c0-2.5-3-7-6-7z"/>',
+    odonto: '<path d="M12 5.5C10 4 6.5 3.5 5 6c-1.5 2.6.2 6 1 8.5.7 2.3 1 6.5 2.5 6.5S10 16 12 16s2 5 3.5 5 1.8-4.2 2.5-6.5c.8-2.5 2.5-5.9 1-8.5-1.5-2.5-5-2-7-.5z"/>',
+    clinica: '<path d="M20.8 8.6a5 5 0 0 0-8.8-3.2 5 5 0 0 0-8.8 3.2c0 5.4 8.8 11 8.8 11s8.8-5.6 8.8-11z"/><path d="M3.5 12h4l2-3 3 6 2-3h6"/>',
+    oficina: '<path d="M15 4a5 5 0 0 0-4.7 6.7L3.6 17.4a2 2 0 0 0 3 3l6.7-6.7A5 5 0 0 0 20 9l-3 1-2-2 1-3z"/>',
+    escritorio: '<path d="M12 3v18M7 21h10M5 7h14M5 7l-3 7a3.5 3.5 0 0 0 6 0zM19 7l-3 7a3.5 3.5 0 0 0 6 0z"/>',
+    imobiliaria: '<path d="M3 11 12 4l9 7"/><path d="M5.5 9.5V20h13V9.5"/><path d="M10 20v-6h4v6"/>',
+    obras: '<path d="M13 7 3.5 16.5a2.1 2.1 0 0 0 3 3L16 10"/><path d="M12 6l3-3 6 6-3 3z"/>',
+    generico: '<path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>',
+  };
+  var markSvg = function (nk, cls) { return '<svg class="' + (cls || 'mk') + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (MARK[nk] || MARK.generico) + '</svg>'; };
+
+  /* selo circular com o nome girando — logo gerado para quem não tem */
+  var sealN = 0;
+  function seal(P, d, cls) {
+    var id = 'sp' + (++sealN), txt = (d.n + ' · ' + (P.ci || d.c || '') + ' · ').toUpperCase();
+    var fs = Math.max(10, Math.min(17, 430 / (txt.length * .62)));
+    var center = d.lg
+      ? '<clipPath id="c' + id + '"><circle cx="100" cy="100" r="52"/></clipPath><circle cx="100" cy="100" r="54" fill="#fff"/><image href="' + esc(d.lg) + '" x="48" y="48" width="104" height="104" preserveAspectRatio="xMidYMid slice" clip-path="url(#c' + id + ')"/>'
+      : '<circle cx="100" cy="100" r="54" fill="var(--ac)"/><g transform="translate(76 76) scale(2)" fill="none" stroke="var(--on)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">' + (MARK[P.nk] || MARK.generico) + '</g>';
+    return '<svg class="seal ' + (cls || '') + '" viewBox="0 0 200 200" role="img" aria-label="' + esc(d.n) + '"><defs><path id="' + id + '" d="M100,100 m-78,0 a78,78 0 1,1 156,0 a78,78 0 1,1 -156,0"/></defs>' +
+      '<g class="seal-rot"><text font-size="' + fs.toFixed(1) + '" fill="currentColor" style="font-family:var(--fb);font-weight:600;letter-spacing:.12em"><textPath href="#' + id + '" textLength="486" lengthAdjust="spacing">' + esc(txt) + '</textPath></text></g>' +
+      '<circle cx="100" cy="100" r="96" fill="none" stroke="currentColor" stroke-opacity=".25"/>' + center + '</svg>';
+  }
+
+  function favicon(P, d) {
+    if (d.lg) return '<link rel="icon" href="' + esc(d.lg) + '"><link rel="apple-touch-icon" href="' + esc(d.lg) + '">';
+    var on = lum(P.pal.ac) > .45 ? '#111111' : '#ffffff';
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="' + P.pal.ac + '"/><g transform="translate(14 14) scale(1.5)" fill="none" stroke="' + on + '" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + (MARK[P.nk] || MARK.generico) + '</g></svg>';
+    return '<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,' + encodeURIComponent(svg) + '">';
+  }
+
   var stars = function (n) { var s = ''; for (var i = 0; i < 5; i++) s += '<i class="' + (i < Math.round(n || 5) ? 'on' : '') + '">' + ICON.star + '</i>'; return '<span class="stars">' + s + '</span>'; };
 
   /* ---------- plano: escolhas determinísticas por negócio ---------- */
@@ -103,6 +144,16 @@ var LSite = (function () {
     '.skip{position:fixed;left:12px;top:-60px;z-index:100;background:var(--ac);color:var(--on);padding:10px 14px;border-radius:8px;font-weight:600;transition:top .2s var(--ease)}.skip:focus{top:12px}',
     '.mono{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:min(var(--r),10px);background:var(--ac);color:var(--on);font-family:var(--fd);font-size:14px;letter-spacing:0;flex:none}',
     '.logo{display:inline-flex;align-items:center;gap:12px}',
+    '.mono{overflow:hidden;position:relative}.mono .mk{width:19px;height:19px}.mono img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#fff;padding:3px;display:none}',
+    '.mono.has-img img{display:block}.mono.has-img .mk{visibility:hidden}',
+    '.seal{width:100%;height:auto;color:var(--fg);overflow:visible}.seal-rot{transform-origin:100px 100px;animation:spin 26s linear infinite}',
+    '@keyframes spin{to{transform:rotate(360deg)}}',
+    '.h-seal{position:absolute;right:clamp(20px,6vw,90px);bottom:clamp(70px,12vh,130px);width:clamp(120px,12vw,168px);color:#fff}',
+    '.c-seal{position:absolute;left:-54px;bottom:-30px;width:clamp(110px,10vw,140px);z-index:3;background:var(--bg);border-radius:50%;padding:8px}',
+    '.t-seal{width:96px;margin:0 auto 22px}',
+    '.ed-fig{position:relative}.e-seal{position:absolute;right:-40px;top:-50px;width:clamp(110px,10vw,140px);background:var(--bg);border-radius:50%;padding:8px}',
+    '.f-seal{width:96px;flex:none}',
+    '@media (max-width:960px){.h-seal{width:96px;bottom:auto;top:96px;right:18px}.c-seal{left:8px;bottom:-24px;width:96px}.e-seal{right:10px;top:-40px;width:96px}}',
     '.open{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:5px 10px;border-radius:999px;border:1px solid var(--line);margin-left:6px;vertical-align:middle}',
     '.open:before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}.open.is-on{color:#16a34a;border-color:rgba(22,163,74,.35)}.open.is-off{color:var(--mut)}.open:empty{display:none}',
     'body{display:block;margin:0;padding:0;background:var(--bg);color:var(--fg);font:400 17px/1.65 var(--fb);overflow-x:hidden;-webkit-font-smoothing:antialiased}',
@@ -309,6 +360,9 @@ var LSite = (function () {
     var hoursAttr = (d.h && d.h.length) ? ' data-open="' + esc(JSON.stringify(d.h)) + '"' : '';
     var openTag = hoursAttr ? '<span class="open"' + hoursAttr + '></span>' : '';
     var chip = (d.r || openTag) ? '<div class="chip" data-r style="--d:.9s">' + (d.r ? stars(d.r) + '<span><b>' + rating + '</b> no Google · ' + (d.u || 0) + ' avaliações</span>' : '') + openTag + '</div>' : '';
+    var monoHtml = '<span class="mono' + (d.lg ? ' has-img' : '') + '" aria-hidden="true">' +
+      (d.lg ? '<img src="' + esc(d.lg) + '" alt="">' : d.fv ? '<img data-fv src="https://www.google.com/s2/favicons?domain=' + encodeURIComponent(d.fv) + '&sz=256" alt="">' : '') + markSvg(P.nk) + '</span>';
+    var sealHtml = function (cls) { return seal(P, d, cls); };
     var initials = String(d.n || '').split(/\s+/).filter(function (w) { return w.length > 2 || /^[A-ZÀ-Ú]/.test(w); }).slice(0, 2).map(function (w) { return w.charAt(0).toUpperCase(); }).join('') || String(d.n || '?').charAt(0);
     var sh = function (eyb, title, center) { return '<div class="sh"' + (center ? ' style="margin-inline:auto;text-align:center"' : '') + ' data-r><span class="eyb">' + esc(eyb) + '</span><h2 class="disp">' + esc(title) + '</h2></div>'; };
     var nav = [['servicos', N.svcT], ['sobre', 'Sobre'], ['galeria', 'Galeria'], ['avaliacoes', 'Avaliações'], ['contato', 'Contato']];
@@ -318,20 +372,20 @@ var LSite = (function () {
     if (P.hero === 'full') {
       hero = '<header class="hero h-full"><div class="h-bg" data-px=".1"><img src="' + ph[0] + '" alt="' + esc(d.n) + '" fetchpriority="high"></div><div class="h-sh"></div>' +
         '<div class="wrap"><span class="eyb" data-r>' + esc(P.kick) + '</span><h1 class="disp">' + words(P.head) + '</h1><p class="lead" data-r style="--d:.6s">' + esc(P.sub) + '</p>' +
-        '<div class="cta" data-r style="--d:.75s">' + btnWA() + btnSec + '</div>' + chip + '</div><a class="scroll" href="#servicos">Rolar</a></header>';
+        '<div class="cta" data-r style="--d:.75s">' + btnWA() + btnSec + '</div>' + chip + '</div><div class="h-seal" data-r="scale" style="--d:1s">' + sealHtml() + '</div><a class="scroll" href="#servicos">Rolar</a></header>';
     } else if (P.hero === 'split') {
       hero = '<header class="hero h-split"><div class="wrap"><div><span class="eyb" data-r>' + esc(P.kick) + '</span><h1 class="disp">' + words(P.head) + '</h1><p class="lead" data-r style="--d:.6s">' + esc(P.sub) + '</p>' +
         '<div class="cta" data-r style="--d:.75s">' + btnWA() + btnSec + '</div>' + chip + '</div>' +
         '<div class="col" data-r="scale" style="--d:.3s"><figure class="f1"><img src="' + ph[0] + '" alt="" data-px=".06"></figure><figure class="f2"><img src="' + ph[1] + '" alt="" data-px="-.05"></figure>' +
         (d.r ? '<div class="badge b1">' + ICON.star + '<div><b>' + rating + '</b><br><small>' + (d.u || 0) + ' avaliações</small></div></div>' : '') +
-        '<div class="badge b2"><span class="dot"></span>Atendimento pelo WhatsApp</div></div></div></header>';
+        '<div class="badge b2"><span class="dot"></span>Atendimento pelo WhatsApp</div><div class="c-seal">' + sealHtml() + '</div></div></div></header>';
     } else if (P.hero === 'center') {
       var strip = ph.slice(0, 6).map(function (u) { return '<figure><img src="' + u + '" alt=""></figure>'; }).join('');
-      hero = '<header class="hero h-center"><div class="glow"></div><div class="wrap"><span class="eyb" data-r>' + esc(P.kick) + '</span><h1 class="disp">' + words(P.head) + '</h1><p class="lead" data-r style="--d:.6s">' + esc(P.sub) + '</p>' +
+      hero = '<header class="hero h-center"><div class="glow"></div><div class="wrap"><div class="t-seal" data-r="scale">' + sealHtml() + '</div><span class="eyb" data-r>' + esc(P.kick) + '</span><h1 class="disp">' + words(P.head) + '</h1><p class="lead" data-r style="--d:.6s">' + esc(P.sub) + '</p>' +
         '<div class="cta" data-r style="--d:.75s">' + btnWA() + btnSec + '</div>' + chip + '</div><div class="strip" data-r style="--d:.9s"><div class="tr">' + strip + strip + '</div></div></header>';
     } else {
       hero = '<header class="hero h-ed"><div class="wrap"><div class="ed-top" data-r><span class="eyb" style="margin:0">' + esc(P.kick) + '</span>' + (d.r ? '<span class="chip" style="margin:0">' + stars(d.r) + '<span><b>' + rating + '</b> · ' + (d.u || 0) + ' avaliações</span></span>' : '') + '</div>' +
-        '<h1 class="disp">' + words(d.n) + '</h1><div class="ed-row"><figure data-r="clip" style="--d:.4s"><img src="' + ph[0] + '" alt="" data-px=".08"></figure>' +
+        '<h1 class="disp">' + words(d.n) + '</h1><div class="ed-row"><div class="ed-fig"><figure data-r="clip" style="--d:.4s"><img src="' + ph[0] + '" alt="" data-px=".08"></figure><div class="e-seal" data-r="scale" style="--d:1s">' + sealHtml() + '</div></div>' +
         '<div data-r style="--d:.6s"><h2 class="disp">' + esc(P.head) + '</h2><p class="lead">' + esc(P.sub) + '</p><div class="cta">' + btnWA() + '</div></div></div></div></header>';
     }
 
@@ -405,11 +459,11 @@ var LSite = (function () {
       '</div></div></section>';
 
     var cr = (opts.exported && d.s && d.cr !== 0) ? '<small>Site por ' + (d.w ? '<a href="https://wa.me/' + esc(d.w) + '" target="_blank" rel="noopener">' + esc(d.s) + '</a>' : esc(d.s)) + '</small>' : '';
-    var footer = '<footer><div class="wrap ft"><div><div class="big">' + esc(d.n) + '</div><small>' + esc(d.c || '') + (P.ci ? ' em ' + esc(P.ci) : '') + ' · © ' + new Date().getFullYear() + '</small></div>' + cr + '</div></footer>';
+    var footer = '<footer><div class="wrap ft"><div class="f-seal">' + sealHtml() + '</div><div style="flex:1"><div class="big">' + esc(d.n) + '</div><small>' + esc(d.c || '') + (P.ci ? ' em ' + esc(P.ci) : '') + ' · © ' + new Date().getFullYear() + '</small></div>' + cr + '</div></footer>';
 
     var pv = (!opts.exported && (d.s || d.w)) ? '<div class="pv">✨ Prévia' + (d.s ? ' por ' + esc(d.s) : '') + (d.w ? ' <a href="https://wa.me/' + esc(d.w) + '?text=' + encodeURIComponent('Oi! Vi a prévia do site da ' + d.n + ' e quero colocar no ar.') + '" target="_blank" rel="noopener">Quero no ar →</a>' : '') + '</div>' : '';
 
-    var body = '<a class="skip" href="#servicos">Pular para o conteúdo</a><div class="prog"></div><nav class="nav" aria-label="Principal"><div class="wrap"><a class="logo" href="#"><span class="mono" aria-hidden="true">' + esc(initials) + '</span><span>' + esc(d.n) + '</span></a><div class="links">' +
+    var body = '<a class="skip" href="#servicos">Pular para o conteúdo</a><div class="prog"></div><nav class="nav" aria-label="Principal"><div class="wrap"><a class="logo" href="#">' + monoHtml + '<span>' + esc(d.n) + '</span></a><div class="links">' +
       nav.filter(function (x) { return x[0] !== 'avaliacoes' || d.r; }).map(function (x) { return '<a href="#' + x[0] + '">' + esc(x[1]) + '</a>'; }).join('') + '</div>' + btnWA('WhatsApp', 'sm') +
       '<button class="burger" aria-label="Menu"><i></i><i></i></button></div></nav>' +
       '<div class="mnav">' + nav.map(function (x) { return '<a href="#' + x[0] + '">' + esc(x[1]) + '</a>'; }).join('') + '<div style="margin-top:20px">' + btnWA() + '</div></div>' +
@@ -423,7 +477,7 @@ var LSite = (function () {
 
     return '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
       '<title>' + esc(title) + '</title><meta name="description" content="' + esc(desc) + '">' + (opts.exported ? '' : '<meta name="robots" content="noindex">') +
-      '<meta property="og:title" content="' + esc(title) + '"><meta property="og:description" content="' + esc(desc) + '"><meta property="og:image" content="' + esc(ph[0]) + '"><meta name="theme-color" content="' + P.pal.bg + '">' +
+      '<meta property="og:title" content="' + esc(title) + '"><meta property="og:description" content="' + esc(desc) + '"><meta property="og:image" content="' + esc(ph[0]) + '"><meta name="theme-color" content="' + P.pal.bg + '">' + favicon(P, d) +
       '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?' + P.font.q + '&display=swap">' +
       '<style>' + css(P) + '.map iframe{--mapf:' + (P.dark ? 'grayscale(.4) invert(.9) hue-rotate(180deg)' : 'grayscale(.2)') + '}</style>' +
       '<noscript><style>[data-r]{opacity:1!important;transform:none!important;clip-path:none!important}.w{transform:none!important}</style></noscript>' +
@@ -465,6 +519,11 @@ var LSite = (function () {
     var lb = document.querySelector('.lb');
     q('.gal figure').forEach(function (f) { f.addEventListener('click', function () { lb.querySelector('img').src = f.querySelector('img').src; lb.classList.add('on'); }); });
     if (lb) lb.addEventListener('click', function () { lb.classList.remove('on'); });
+    /* ícone do site do próprio negócio: só usa se tiver resolução boa */
+    q('img[data-fv]').forEach(function (img) {
+      var ok = function () { if (img.naturalWidth >= 96) img.parentNode.classList.add('has-img'); else img.remove(); };
+      if (img.complete && img.naturalWidth) ok(); else { img.onload = ok; img.onerror = function () { img.remove(); }; }
+    });
     /* "Aberto agora" calculado na hora, a partir dos horários reais do Google */
     var DAYS = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
     q('[data-open]').forEach(function (el) {

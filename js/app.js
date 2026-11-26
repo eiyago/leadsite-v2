@@ -296,6 +296,23 @@ function swapLinks(before, after) {
   $$('#dBody textarea, #qMsg').forEach((t) => { if (t.value.includes(before)) t.value = t.value.split(before).join(after); });
 }
 
+/* reduz o logo enviado para caber no link da prévia (quadrado de 112px, WebP) */
+function shrinkLogo(file) {
+  return new Promise((res, rej) => {
+    const img = new Image();
+    img.onload = () => {
+      const S = 112, c = document.createElement('canvas'); c.width = c.height = S;
+      const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, S, S);
+      const k = Math.min(S / img.width, S / img.height), w = img.width * k, h = img.height * k;
+      x.drawImage(img, (S - w) / 2, (S - h) / 2, w, h);
+      URL.revokeObjectURL(img.src);
+      res(c.toDataURL('image/webp', .82));
+    };
+    img.onerror = rej;
+    img.src = URL.createObjectURL(file);
+  });
+}
+
 function parseSv(txt) {
   return txt.split('\n').map((x) => x.split('|').map((s) => s.trim())).filter((a) => a[0]).map((a) => [a[0], a[1] || '', a[2] || '']);
 }
@@ -330,6 +347,9 @@ async function baixarZip(l) {
       } catch { local.push(urls[i]); }
     }
     d.ph = local; // mesma ordem de fotos, agora dentro do site
+    if (d.lg && /^https?:/.test(d.lg)) {
+      try { const r = await fetch(d.lg, { mode: 'cors' }); if (!r.ok) throw 0; files.push({ name: 'img/logo.png', data: new Uint8Array(await r.arrayBuffer()) }); d.lg = 'img/logo.png'; } catch { /* mantém o link */ }
+    }
     const html = LSite.page(d, { exported: true });
     const slug = (l.sx?.dn || l.nome).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'site';
     const leia = `SITE ${l.sx?.dn || l.nome}\r\n\r\nComo colocar no ar:\r\n1. Acesse https://app.netlify.com/drop e arraste esta pasta.\r\n2. Em Domain settings, conecte o dominio do cliente (registro.br).\r\n\r\nArquivos: index.html (site completo) e pasta img/ (fotos).\r\nGerado pelo LeadSite V2 em ${new Date().toLocaleString('pt-BR')}.\r\n`;
@@ -439,6 +459,13 @@ const TABS = {
       <button class="btn wa" data-do="sendSite" ${l.wa ? '' : 'disabled'}>Enviar prévia no WhatsApp</button></div>
     </div>
     <details class="panel edit" open><summary><b>Personalizar o site</b> <span class="muted small">(tudo opcional — em branco usa o automático)</span></summary>
+      <div class="logo-row">
+        <div class="logo-prev">${sx.lg ? `<img src="${esc(sx.lg)}" alt="">` : `<span class="muted small">${l.siteTipo === 'tem' ? 'ícone do site ou selo gerado' : 'selo gerado'}</span>`}</div>
+        <label class="f" style="flex:1"><span>Logo do cliente — cole o link da imagem (no Instagram/site: botão direito na logo → "Copiar endereço da imagem") ou envie o arquivo</span>
+          <input data-sx="lg" value="${esc(sx.lg && !sx.lg.startsWith('data:') ? sx.lg : '')}" placeholder="${sx.lg?.startsWith('data:') ? 'arquivo enviado ✔' : 'https://…/logo.png'}"></label>
+        <label class="btn sm file">Enviar arquivo<input type="file" id="logoFile" accept="image/*" hidden></label>
+        ${sx.lg ? '<button class="btn sm" data-do="rmLogo">Remover</button>' : ''}
+      </div>
       <div class="row"><label class="f"><span>Nome exibido</span><input data-sx="dn" value="${esc(sx.dn || '')}" placeholder="${esc(l.nome)}"></label>
         <label class="f"><span>Instagram</span><input data-sx="ig" value="${esc(sx.ig || '')}" placeholder="@perfil"></label></div>
       <label class="f"><span>Título principal</span><input data-sx="hl" value="${esc(sx.hl || '')}" placeholder="${esc(P.head)}"></label>
@@ -540,6 +567,11 @@ function bindDrawer() {
   body.addEventListener('change', (e) => {
     const l = S.crm[S.drawer.id]; const t = e.target;
     if (t.dataset.sx) { setSx(l, t); if (t.tagName === 'SELECT') renderDrawer(); return; }
+    if (t.id === 'logoFile' && t.files[0]) {
+      shrinkLogo(t.files[0]).then((url) => { l.sx = l.sx || {}; l.sx.lg = url; saveCRM(); renderDrawer(); toast('Logo aplicado'); })
+        .catch(() => toast('Não consegui ler a imagem'));
+      return;
+    }
     if (t.id === 'crOn') { l.sx = l.sx || {}; if (t.checked) delete l.sx.cr; else l.sx.cr = 0; saveCRM(); renderDrawer(); return; }
     if (t.id === 'tplSel') { S.drawer.tpl = t.value; renderDrawer(); return; }
     const f = t.dataset.field; if (!f) return;
@@ -573,6 +605,7 @@ function bindDrawer() {
       resetSx: () => { const keep = l.sx?.cr; l.sx = keep === 0 ? { cr: 0 } : {}; saveCRM(); },
       efetivar: () => efetivar(l),
       baixarZip: () => baixarZip(l),
+      rmLogo: () => { if (l.sx) delete l.sx.lg; saveCRM(); },
       copyOficial: () => copy(l.oficial),
       sendOficial: () => openWA(l, msgFor(l, 'entrega')),
       copyProp: () => copy($('#propTxt').value),

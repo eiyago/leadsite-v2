@@ -277,6 +277,7 @@ Qualquer imprevisto é só me avisar por aqui. Até lá!
     if (l.avaliacoes?.length) d.rv = l.avaliacoes;
     if (l.horarios?.length) d.h = l.horarios;
     if (l.resumo) d.es = l.resumo;
+    if (l.siteTipo === 'tem' && l.site) { try { d.fv = new URL(l.site).hostname; } catch { /* url inválida */ } }
     if (l.sx) Object.entries(l.sx).forEach(([k, v]) => { if (v !== '' && v != null && !(Array.isArray(v) && !v.length)) d[k] = v; });
     return d;
   }
