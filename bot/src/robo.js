@@ -14,6 +14,9 @@ let ocupado = false;
 
 /* ---------- ritmo anti-ban ---------- */
 export function cotaHoje() {
+  // exceção de um dia só (ex.: "hoje pode passar do limite"); amanhã volta ao normal sozinho
+  const ex = DB.meta.excecaoHoje;
+  if (ex && ex.data === agoraBR().data && ex.cota) return ex.cota;
   const d = Math.floor(dias(DB.meta.inicio));
   return Math.min(CFG.maximoPorDia, CFG.inicioPorDia + CFG.aumentoPorDia * d);
 }
@@ -23,7 +26,9 @@ const podeResponder = (t) => t.hora >= CFG.respostaInicio && t.hora < CFG.respos
 /* ritmo: 3 a 4 mensagens por hora (uma a cada ~15–20 min, com variação natural).
    O teto do dia (cotaHoje) continua valendo por cima disso. */
 function proximoIntervalo() {
-  const porHora = CFG.minPorHora + Math.random() * (CFG.maxPorHora - CFG.minPorHora);
+  const ex = DB.meta.excecaoHoje;
+  const fixo = ex && ex.data === agoraBR().data && ex.porHora;
+  const porHora = fixo || CFG.minPorHora + Math.random() * (CFG.maxPorHora - CFG.minPorHora);
   const base = 60 / porHora;
   return (base + (Math.random() * 3 - 1.5)) * 60e3;
 }
