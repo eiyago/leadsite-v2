@@ -262,8 +262,13 @@ function aoMinhaMensagem({ jid, alt }) {
 
 async function comando(c, original = c) {
   const t = agoraBR();
-  if (c.startsWith('/pausar')) { DB.setMeta('pausado', true); return avisar('⏸️ Robô pausado. Mande /retomar para voltar.'); }
-  if (c.startsWith('/retomar')) { DB.setMeta('pausado', false); return avisar('▶️ Robô retomado.'); }
+  if (c.startsWith('/pausar')) {
+    // "/pausar 24" pausa por 24h e volta sozinho (reaquecendo); "/pausar" pausa até /retomar
+    const h = Number((original.match(/\d+/) || [])[0]);
+    DB.setMeta('pausado', true); DB.setMeta('retomarEm', h ? Date.now() + h * 3600e3 : null);
+    return avisar(h ? `⏸️ Robô pausado por ${h}h. Volta sozinho com ritmo leve.` : '⏸️ Robô pausado. Mande /retomar para voltar.');
+  }
+  if (c.startsWith('/retomar')) { DB.setMeta('pausado', false); DB.setMeta('retomarEm', null); return avisar('▶️ Robô retomado.'); }
   if (c.startsWith('/status')) {
     const all = DB.leads(); const n = (e) => all.filter((l) => l.etapa === e).length;
     return avisar(`📊 *Robô LeadSite*\n📍 Campanha: ${cidadeAtual()}\nHoje: ${DB.enviadosHoje(t.data)}/${cotaHoje()} mensagens (${CFG.minPorHora}–${CFG.maxPorHora} por hora)\nNa fila: ${n('fila')}\nAbordados: ${all.filter((l) => l.abordadoEm).length}\nResponderam: ${all.filter((l) => l.respondeu).length}\nConversando: ${n('conversando')}\nProntos p/ fechar: ${n('negociando')}\nSem interesse: ${n('optout')}\n${DB.meta.pausado ? '⏸️ PAUSADO' : '▶️ rodando'}`);
@@ -366,6 +371,13 @@ export async function teste() {
 
 /* ---------- laço principal ---------- */
 async function tick() {
+  // fim da pausa programada (ex.: restrição de 24h do WhatsApp): volta devagar, reaquecendo o chip
+  if (DB.meta.pausado && DB.meta.retomarEm && Date.now() >= DB.meta.retomarEm) {
+    DB.setMeta('pausado', false); DB.setMeta('retomarEm', null); DB.setMeta('excecaoHoje', null);
+    DB.setMeta('inicio', new Date().toISOString()); // recomeça a rampa de aquecimento
+    log('▶️  Pausa programada terminou: retomando com aquecimento do chip');
+    if (conectado()) avisar(`▶️ Voltei! Retomando com ritmo leve (${CFG.minPorHora}–${CFG.maxPorHora} por hora, cota ${cotaHoje()} hoje) para reaquecer o chip.`);
+  }
   if (ocupado || !conectado() || DB.meta.pausado) return;
   ocupado = true;
   try {

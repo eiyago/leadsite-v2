@@ -24,23 +24,27 @@ const saud = () => { const h = Number(new Intl.DateTimeFormat('pt-BR', { timeZon
 /* abertura: elogio real → problema → solução pronta → objeções já quebradas (tempo, custo, Instagram) → fechamento.
    Mesmo tamanho de antes; sem números inventados. Premissa: no ar em 24h. */
 const pag = () => (CFG.mensalidade ? 'investimento baixo' : 'pagamento único, sem mensalidade');
+/* abertura persuasiva: elogio real → DOR (o concorrente com site leva o cliente) → solução pronta → objeções quebradas → fechamento */
+const Pag = () => pag()[0].toUpperCase() + pag().slice(1);
+const n2 = (l, pre = ' (', pos = ')') => (nota(l) ? `${pre}${nota(l)}${pos}` : '');
 const MODELOS = [
-  (l, k) => `${saud()}! Vi a *${l.nome}* no Google${nota(l) ? ` — ${nota(l)}` : ''} 👏\n\nSem site, quem pesquisa ${cat(l)} em ${cid(l)} acaba no concorrente. Já deixei o de vocês pronto, sem precisar fazer nada:\n${k}\n\n${pag()[0].toUpperCase() + pag().slice(1)} e no ar em 24h. Posso ativar?\n${assinatura()}`,
-  (l, k) => `${saud()}! A *${l.nome}* já tem a reputação${nota(l) ? ` (${nota(l)})` : ''}. Falta a vitrine.\n\nO site de vocês está pronto, com suas fotos e avaliações, levando o cliente direto pro WhatsApp:\n${k}\n\nVocê só aprova, ajusto o que quiser e em 24h está no ar. Bora?\n${assinatura()}`,
-  (l, k) => `${saud()}! Encontrei a *${l.nome}* pesquisando ${cat(l)} em ${cid(l)}${nota(l) ? ` (${nota(l)})` : ''}.\n\nSem site, o cliente novo não acha seus serviços e escolhe outro. Resolvi isso pra vocês:\n${k}\n\nSem trabalho pra você e ${pag()}: aprovou, em 24h está no ar. Quer?\n${assinatura()}`,
-  (l, k) => `${saud()}! Passei pela *${l.nome}* no Google Maps${nota(l) ? ` (${nota(l)})` : ''}.\n\nFiz o site de vocês: serviços, fotos, avaliações e botão direto pro WhatsApp, aberto 24h:\n${k}\n\nNão precisa entender de internet nem ter tempo livre. Coloco no ar em 24h?\n${assinatura()}`,
+  (l, k) => `${saud()}! Vi a *${l.nome}* no Google${n2(l, ' — ', '')} 👏\n\nHoje, quem pesquisa ${cat(l)} em ${cid(l)} encontra primeiro o concorrente que tem site, e fecha com ele, mesmo sem a reputação de vocês.\n\nResolvi isso: o site de vocês já está pronto 👇\n${k}\n\n${Pag()}, sem trabalho pra você e no ar em 24h. Posso ativar?`,
+  (l, k) => `${saud()}! A *${l.nome}*${n2(l, ' tem ', '')}: reputação que muito concorrente não tem. Mas sem site, é ele que aparece no Google e leva o seu cliente.\n\nVirei esse jogo pra vocês: site pronto, com fotos, avaliações e botão direto pro WhatsApp 👇\n${k}\n\nVocê só aprova e em 24h está no ar. Bora?`,
+  (l, k) => `${saud()}! Pesquisei ${cat(l)} em ${cid(l)}: a *${l.nome}*${n2(l)} aparece sem site, enquanto o concorrente mostra serviços, fotos e WhatsApp num clique.\n\nCliente novo escolhe quem passa mais confiança. Por isso já fiz o de vocês 👇\n${k}\n\n${Pag()}, no ar em 24h. Posso ativar?`,
+  (l, k) => `${saud()}! Cada pessoa que pesquisa ${cat(l)} em ${cid(l)} e não acha o site da *${l.nome}* vai pro concorrente${n2(l, ', mesmo vocês tendo ', '')}.\n\nO site de vocês já está pronto, aberto 24h e levando direto pro WhatsApp 👇\n${k}\n\nNão precisa entender de internet nem pagar mensalidade. Coloco no ar em 24h?`,
 ];
 const MODELOS_SOCIAL = [
-  (l, k) => `${saud()}! Vi que a *${l.nome}* usa o Instagram como site${nota(l) ? ` (${nota(l)}, top!)` : ''}.\n\nO Google não mostra Instagram como site, e quem pesquisa ${cat(l)} em ${cid(l)} cai no concorrente. O de vocês já está pronto:\n${k}\n\nNão substitui o Insta, soma. ${pag()[0].toUpperCase() + pag().slice(1)}, no ar em 24h. Posso ativar?\n${assinatura()}`,
-  (l, k) => `${saud()}! A *${l.nome}* manda bem no Instagram${nota(l) ? ` e no Google (${nota(l)})` : ''}.\n\nFalta o site: é ele que aparece no Google e leva direto pro seu WhatsApp. Já deixei pronto:\n${k}\n\nVocê só aprova e em 24h está no ar, ${pag()}. Bora?\n${assinatura()}`,
+  (l, k) => `${saud()}! A *${l.nome}* manda bem no Instagram${n2(l)}, mas o Google não mostra Instagram como site: quem pesquisa ${cat(l)} em ${cid(l)} acaba no concorrente.\n\nO site de vocês já está pronto 👇\n${k}\n\nNão substitui o Insta, soma. ${Pag()}, no ar em 24h. Posso ativar?`,
+  (l, k) => `${saud()}! Quem pesquisa ${cat(l)} em ${cid(l)} no Google vê o site do concorrente, e a *${l.nome}*${n2(l)} fica de fora, só no Instagram.\n\nVirei isso pra vocês: site pronto, levando direto pro seu WhatsApp 👇\n${k}\n\nVocê só aprova e em 24h está no ar. Bora?`,
 ];
 const modeloAbertura = (l, k) => { const M = l.siteTipo === 'social' ? MODELOS_SOCIAL : MODELOS; return M[h(l.id || l.nome) % M.length](l, k); };
 
-/* follow-ups: 1 reforça benefício · 2 quebra objeção de preço · 3 porta aberta */
+/* follow-ups: 1 dor do concorrente · 2 condição especial (estilo do dono) · 3 porta aberta */
+const promo = () => money(CFG.precoPromo || CFG.preco);
 const FOLLOWUPS = {
-  1: (l, k) => `Oi! Conseguiu ver o site da *${l.nome}*? 👀\n${k}\n\nCom ele no ar, quem procura vocês no Google cai direto no seu WhatsApp, 24h por dia. Posso ativar?`,
-  2: (l) => `Oi! Pra facilitar: o site completo da *${l.nome}* sai por ${money(CFG.preco)}${CFG.mensalidade ? ` + ${money(CFG.mensalidade)}/mês` : ', pagamento único'}, pronto em até 24h e com os ajustes que você quiser.\n\nUm único cliente novo já paga esse investimento. Fechamos?`,
-  3: (l) => `Oi! Não quero tomar seu tempo 🙂 Vou arquivar o site da *${l.nome}* por aqui.\n\nSe quiser colocar no ar, é só responder "quero" que eu ativo em 24h.`,
+  1: (l, k) => `Oi! Enquanto o site da *${l.nome}* não está no ar, quem pesquisa ${cat(l)} em ${cid(l)} continua indo pro concorrente 😕\n\nO de vocês já está pronto 👇\n${k}\n\nPosso ativar hoje?`,
+  2: (l, k) => `🤝 Tenho uma condição especial para vocês!\n\nConsigo finalizar o site da *${l.nome}* por ${promo()}, pagamento único e sem mensalidade.\n\nVocês já têm uma ótima reputação; falta apenas uma vitrine profissional para transmitir confiança e evitar que clientes acabem escolhendo a concorrência.\n\nA página já está pronta! 🚀\n${k}\n\n💳 O pagamento fica à escolha de vocês: Pix ou cartão.\n\nPodemos finalizar?`,
+  3: (l) => `Oi! Vou arquivar o site da *${l.nome}* por aqui 🙂\n\nA condição de ${promo()} ainda está de pé: se quiser, é só responder "quero" que coloco no ar em 24h. Sucesso! 🙌`,
 };
 const MODEL = 'claude-opus-5-5';
 const money = (v) => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -51,7 +55,9 @@ const SISTEMA = () => `Você é o vendedor de ${DONO()}${CFG.empresa ? ` (${CFG.
 O PRODUTO
 - O cliente já recebeu o site PRONTO dele (link na conversa), feito com as fotos, avaliações e informações reais do negócio no Google.
 - Botão de WhatsApp, rota no Google Maps, horários, galeria e avaliações. Ajustes de textos, fotos, cores e preços sem custo antes de publicar.
-- Investimento: ${money(CFG.preco)}${CFG.mensalidade ? ` + ${money(CFG.mensalidade)}/mês` : ' (pagamento único)'}. No ar em até 24h após a aprovação.
+- Investimento: ${money(CFG.preco)}${CFG.mensalidade ? ` + ${money(CFG.mensalidade)}/mês` : ' (pagamento único)'}. No ar em até 24h após a aprovação. Pix ou cartão.
+- Condição especial (use para FECHAR quando houver objeção de preço ou hesitação): ${money(CFG.precoPromo || CFG.preco)}, pagamento único, sem mensalidade.
+- A dor central do cliente: quem pesquisa a categoria dele na cidade encontra o CONCORRENTE com site e fecha com ele. Use isso com frequência, sem exagero e sem inventar números.
 
 O QUE VOCÊ VENDE (benefício antes de característica)
 Profissionalismo e credibilidade; vitrine digital aberta 24h; presença profissional no Google; serviços e preços organizados num só lugar; mais contatos chegando no WhatsApp. O site é investimento em imagem e captação de clientes.
@@ -168,9 +174,9 @@ Escreva a próxima mensagem para o CLIENTE e escolha a ação.`;
 /* follow-ups curtos, também únicos por lead */
 export async function followup(l, link, n) {
   const objetivo = {
-    1: `reforçar o BENEFÍCIO (quem procura no Google cai direto no WhatsApp dele, 24h) e mandar o link de novo (${link}); termine com pergunta de fechamento`,
-    2: `quebrar a objeção de PREÇO: ${money(CFG.preco)}${CFG.mensalidade ? ` + ${money(CFG.mensalidade)}/mês` : ', pagamento único'}, pronto em 24h, ajustes sem custo; um único cliente novo já paga o investimento; termine com "Fechamos?" ou parecido`,
-    3: 'último toque, curto e educado: vai arquivar o site dele, mas se quiser é só responder "quero" que ativa em 24h',
+    1: `reforçar a DOR: enquanto o site não está no ar, quem pesquisa a categoria na cidade continua indo pro concorrente; mande o link de novo (${link}); termine com "Posso ativar hoje?"`,
+    2: `oferecer a CONDIÇÃO ESPECIAL neste estilo: "🤝 Tenho uma condição especial para vocês! Consigo finalizar o site por ${money(CFG.precoPromo || CFG.preco)}, pagamento único e sem mensalidade. Vocês já têm uma ótima reputação; falta apenas uma vitrine profissional para transmitir confiança e evitar que clientes acabem escolhendo a concorrência. A página já está pronta! 🚀 (link ${link}) 💳 Pix ou cartão. Podemos finalizar?"`,
+    3: `último toque, curto e educado: vai arquivar o site dele, mas a condição de ${money(CFG.precoPromo || CFG.preco)} ainda está de pé; é só responder "quero" que ativa em 24h`,
   }[n];
   const user = `${fatos(l)}
 Você mandou o site pronto dele e não teve resposta. Escreva o follow-up ${n} (no máximo 3 linhas) com este objetivo: ${objetivo}. Não repita a mensagem anterior.`;

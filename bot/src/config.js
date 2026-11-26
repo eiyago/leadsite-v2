@@ -10,6 +10,7 @@ export const CFG = {
   empresa: process.env.EMPRESA || '',
   meuWhats: String(process.env.MEU_WHATS || '').replace(/\D/g, ''),
   preco: num(process.env.PRECO, 250),
+  precoPromo: num(process.env.PRECO_PROMO, 150),
   mensalidade: num(process.env.MENSALIDADE, 0),
   cidade: process.env.CIDADE || 'Foz do Iguaçu, PR',
   categorias: list(process.env.CATEGORIAS),
