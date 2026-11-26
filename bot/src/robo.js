@@ -156,10 +156,13 @@ function pedirEncaminhar(id) {
   setTimeout(async () => {
     const l = DB.lead(id);
     if (!l || l.respondeu || l.humano || ['optout', 'negociando'].includes(l.etapa)) return;
-    if (!podeResponder(agoraBR()) || !conectado()) return;
+    const t = agoraBR();
+    if (!dentroDaJanela(t) || !conectado()) return;
+    if (DB.enviadosHoje(t.data) >= cotaHoje()) { DB.upsert({ id, pediuEncaminhar: false }); return; } // cota cheia: tenta outro dia
     try {
       const msg = ENCAMINHAR[Math.floor(Math.random() * ENCAMINHAR.length)](l);
       await enviar(l.jid, msg);
+      DB.contarEnvio(t.data);
       DB.log(id, 'eu', msg);
       log(`📨 Pedi para encaminhar ao responsável: ${l.nome}`);
     } catch (e) { log('[encaminhar] erro:', e.message); }
@@ -211,6 +214,7 @@ async function comando(c, original = c) {
     try {
       const r = await leadManual({ busca, telefone, instagram });
       if (r.jaAbordado) return avisar(`ℹ️ *${r.lead}* já foi abordado antes.\nPrévia: ${r.link}`);
+      if (r.amanha) return avisar(`➕ *${r.lead}* adicionado. A cota de hoje já bateu (anti-ban), então ele é o primeiro de amanhã.`);
       if (r.naFila) return avisar(`➕ *${r.lead}* adicionado. Sai em ~${r.emMin} min (respeitando o intervalo entre mensagens).`);
       return avisar(`✅ *${r.lead}* abordado agora!\nPrévia que ele recebeu: ${r.link}`);
     } catch (e) { return avisar(`⚠️ /lead: ${e.message}\nUso: /lead Nome do negócio | telefone (opcional) | @instagram (opcional)`); }
@@ -238,15 +242,18 @@ export async function leadManual({ busca, telefone, instagram, categoria }) {
   DB.upsert({ ...l, etapa: 'fila', manual: true, mineradoEm: new Date().toISOString() });
   log(`➕ Lead manual: ${l.nome} (${l.categoria}${l.rating ? `, ${l.rating}⭐` : ''})`);
 
+  // a cota é o teto do dia para TUDO: se já bateu, o lead fica na fila (sai primeiro amanhã)
+  const t = agoraBR();
+  if (DB.enviadosHoje(t.data) >= cotaHoje()) return { lead: l.nome, amanha: true };
   const falta = 5 * 60e3 - (Date.now() - (DB.meta.ultimoEnvio || 0));
-  if (falta > 0 || ocupado || !conectado()) {
+  if (falta > 0 || ocupado || !conectado() || !dentroDaJanela(t)) {
     DB.setMeta('proximoEnvio', Math.min(DB.meta.proximoEnvio || Infinity, Date.now() + Math.max(falta, 60e3)));
     return { lead: l.nome, naFila: true, emMin: Math.ceil(Math.max(falta, 60e3) / 60e3) };
   }
   ocupado = true;
   try {
     if (!(await abordar(DB.lead(l.id)))) throw new Error('esse número não tem WhatsApp');
-    DB.meta.ultimoEnvio = Date.now();
+    DB.contarEnvio(t.data);
     const s = DB.lead(l.id);
     return { lead: s.nome, categoria: s.categoria, nota: s.rating, link: s.linkPrevia, mensagem: s.conversa?.at(-1)?.texto };
   } finally { ocupado = false; }
