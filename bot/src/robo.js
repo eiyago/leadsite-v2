@@ -137,6 +137,14 @@ async function processarResposta(id) {
   }
 }
 
+const AUTO = /mensagem autom[aá]tica|resposta autom[aá]tica|grande demanda|hor[aá]rio de atendimento|fora do (nosso )?hor[aá]rio|no momento (n[aã]o|estamos)|em breve (retornaremos|responderemos|entraremos)|retornaremos (o mais|em breve|assim)|agradecemos (o|seu) contato|obrigad[oa] (por|pelo) (entrar em )?contato|seja bem.?vind[oa]|clique no link|fa[cç]a seu agendamento|agende (pelo|por|no) link|nosso card[aá]pio|digite (o n[uú]mero|uma op[cç][aã]o|1)|escolha uma op[cç][aã]o|aguarde (que|um momento|nosso)/i;
+function respostaAutomatica(l, texto) {
+  const ultimaMinha = [...(l.conversa || [])].reverse().find((m) => m.papel === 'eu');
+  const segundos = ultimaMinha ? (Date.now() - new Date(ultimaMinha.em)) / 1000 : 9999;
+  const repetida = l.autoResposta && texto.slice(0, 300) === l.autoResposta;
+  return repetida || AUTO.test(texto) || (segundos < 20 && texto.length > 60);
+}
+
 async function aoReceber({ jid, alt, texto }) {
   const dig = (j) => String(j || '').split('@')[0].split(':')[0];
   // comandos seus, do seu WhatsApp pessoal
@@ -146,6 +154,13 @@ async function aoReceber({ jid, alt, texto }) {
   const l = DB.porJid(jid) || (alt && DB.porJid(alt));
   if (!l) return; // conversa que não é de lead do robô
   if (!(l.jids || []).includes(jid)) DB.upsert({ id: l.id, jids: [...(l.jids || []), jid] });
+  // resposta automática do WhatsApp Business (saudação/ausência): registra, mas não conta como interesse
+  if (!l.respondeu && respostaAutomatica(l, texto)) {
+    DB.log(l.id, 'auto', texto);
+    if (!l.autoResposta) log(`🤖 ${l.nome}: resposta automática do WhatsApp Business — segue no follow-up`);
+    DB.upsert({ id: l.id, autoResposta: texto.slice(0, 300) });
+    return;
+  }
   DB.log(l.id, 'cliente', texto);
   const primeira = !l.respondeu;
   DB.upsert({ id: l.id, respondeu: true, respondeuEm: l.respondeuEm || new Date().toISOString() });

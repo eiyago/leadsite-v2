@@ -5,8 +5,33 @@ import qrcode from 'qrcode-terminal';
 // compatível com o pacote em CommonJS ou ESM
 const lib = B.useMultiFileAuthState ? B : (B.default || B);
 const makeWASocket = typeof lib.default === 'function' ? lib.default : (typeof B.default === 'function' ? B.default : lib.makeWASocket);
-const { useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion } = lib;
+const { useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, makeCacheableSignalKeyStore } = lib;
 import pino from 'pino';
+import fs from 'node:fs';
+
+/* cache simples no formato que o Baileys espera (contador de reenvios) */
+class Cache {
+  constructor() { this.m = new Map(); }
+  get(k) { return this.m.get(k); }
+  set(k, v) { this.m.set(k, v); if (this.m.size > 5000) this.m.delete(this.m.keys().next().value); return true; }
+  del(k) { return this.m.delete(k); }
+  flushAll() { this.m.clear(); }
+}
+const retryCache = new Cache();
+
+/* guarda as mensagens enviadas: quando o celular de quem recebe não consegue
+   descriptografar ("Aguardando mensagem…"), ele pede de novo e o robô reenvia daqui */
+const ARQ_MSGS = 'data/mensagens-enviadas.json';
+const enviadas = new Map();
+try { for (const [k, v] of Object.entries(JSON.parse(fs.readFileSync(ARQ_MSGS, 'utf8')))) enviadas.set(k, v); } catch { /* primeiro uso */ }
+let tGrava = null;
+function guardar(id, message) {
+  if (!id || !message) return;
+  enviadas.set(id, message);
+  while (enviadas.size > 1500) enviadas.delete(enviadas.keys().next().value);
+  clearTimeout(tGrava);
+  tGrava = setTimeout(() => { try { fs.mkdirSync('data', { recursive: true }); fs.writeFileSync(ARQ_MSGS, JSON.stringify(Object.fromEntries(enviadas))); } catch { /* ok */ } }, 1000);
+}
 
 let sock = null;
 let pronto = false;
@@ -25,7 +50,14 @@ export function onMinhaMensagem(fn) { aoProprio = fn; }
 export async function iniciar() {
   const { state, saveCreds } = await useMultiFileAuthState('auth');
   const { version } = await fetchLatestBaileysVersion();
-  sock = makeWASocket({ version, auth: state, logger: pino({ level: 'silent' }), markOnlineOnConnect: false, syncFullHistory: false, browser: ['LeadSite', 'Chrome', '1.0'] });
+  const logger = pino({ level: 'silent' });
+  sock = makeWASocket({
+    version, logger,
+    auth: makeCacheableSignalKeyStore ? { creds: state.creds, keys: makeCacheableSignalKeyStore(state.keys, logger) } : state,
+    msgRetryCounterCache: retryCache,
+    getMessage: async (key) => enviadas.get(key.id),
+    markOnlineOnConnect: false, syncFullHistory: false, browser: ['LeadSite', 'Chrome', '1.0'],
+  });
   sock.ev.on('creds.update', saveCreds);
   sock.ev.on('connection.update', ({ connection, lastDisconnect, qr }) => {
     if (qr) ultimoQR = qr;
@@ -77,7 +109,7 @@ export async function enviar(jid, texto) {
   enviandoPara.add(jid);
   try {
     const r = await sock.sendMessage(jid, { text: texto });
-    if (r?.key?.id) enviadasPeloRobo.add(r.key.id);
+    if (r?.key?.id) { enviadasPeloRobo.add(r.key.id); guardar(r.key.id, r.message); }
     return r?.key?.remoteJid || jid;
   } finally { setTimeout(() => enviandoPara.delete(jid), 6000); }
 }
