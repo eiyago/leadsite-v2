@@ -145,6 +145,27 @@ function respostaAutomatica(l, texto) {
   return repetida || AUTO.test(texto) || (segundos < 20 && texto.length > 60);
 }
 
+/* caiu no menu/robô da empresa: uma linha humana pedindo para chegar no dono (uma vez só) */
+const ENCAMINHAR = [
+  (l) => `Oi! Pode encaminhar pro(a) responsável, por favor? É sobre o site da *${l.nome}* que já deixei pronto 🙂`,
+  (l) => `Obrigado! Consegue passar essa mensagem pro dono(a)? Deixei o site da *${l.nome}* prontinho pra ele(a) ver.`,
+  (l) => `Oi! Quem cuida da divulgação aí? Fiz o site da *${l.nome}* e queria mostrar pro(a) responsável 🙂`,
+];
+function pedirEncaminhar(id) {
+  DB.upsert({ id, pediuEncaminhar: true });
+  setTimeout(async () => {
+    const l = DB.lead(id);
+    if (!l || l.respondeu || l.humano || ['optout', 'negociando'].includes(l.etapa)) return;
+    if (!podeResponder(agoraBR()) || !conectado()) return;
+    try {
+      const msg = ENCAMINHAR[Math.floor(Math.random() * ENCAMINHAR.length)](l);
+      await enviar(l.jid, msg);
+      DB.log(id, 'eu', msg);
+      log(`📨 Pedi para encaminhar ao responsável: ${l.nome}`);
+    } catch (e) { log('[encaminhar] erro:', e.message); }
+  }, (100 + Math.random() * 140) * 1000);
+}
+
 async function aoReceber({ jid, alt, texto }) {
   const dig = (j) => String(j || '').split('@')[0].split(':')[0];
   // comandos seus, do seu WhatsApp pessoal
@@ -157,8 +178,9 @@ async function aoReceber({ jid, alt, texto }) {
   // resposta automática do WhatsApp Business (saudação/ausência): registra, mas não conta como interesse
   if (!l.respondeu && respostaAutomatica(l, texto)) {
     DB.log(l.id, 'auto', texto);
-    if (!l.autoResposta) log(`🤖 ${l.nome}: resposta automática do WhatsApp Business — segue no follow-up`);
+    if (!l.autoResposta) log(`🤖 ${l.nome}: resposta automática do WhatsApp Business — pedindo para encaminhar ao responsável`);
     DB.upsert({ id: l.id, autoResposta: texto.slice(0, 300) });
+    if (!l.pediuEncaminhar) pedirEncaminhar(l.id);
     return;
   }
   DB.log(l.id, 'cliente', texto);
@@ -301,6 +323,9 @@ export function ligar() {
   onMinhaMensagem(aoMinhaMensagem);
   setInterval(tick, 30e3);
   setTimeout(tick, 8e3);
+  // quem caiu em resposta automática e ainda não recebeu o pedido de encaminhamento
+  DB.leads().filter((l) => l.autoResposta && !l.pediuEncaminhar && !l.respondeu && !l.humano)
+    .forEach((l, i) => setTimeout(() => pedirEncaminhar(l.id), i * (180 + Math.random() * 120) * 1000));
   if (modoSemIA()) log('ℹ️  MODO SEM IA: mensagens de modelo; quem responder vai direto para você.');
   log(`🤖 Robô ligado — ${CFG.cidade} · cota de hoje: ${cotaHoje()} abordagens · janela ${CFG.horaInicio}h–${CFG.horaFim}h`);
 }
