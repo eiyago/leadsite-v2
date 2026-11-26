@@ -21,24 +21,26 @@ const cat = (l) => String(l.categoria || 'empresa').toLowerCase();
 const cid = (l) => String(l.cidade || '').split(',')[0] || 'sua cidade';
 const saud = () => { const h = Number(new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', hour: 'numeric', hour12: false }).format(new Date())); return h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite'; };
 
-/* abertura: problema → solução pronta (prévia) → fechamento por pergunta. Curta, sem números inventados. */
+/* abertura: elogio real → problema → solução pronta → objeções já quebradas (tempo, custo, Instagram) → fechamento.
+   Mesmo tamanho de antes; sem números inventados. Premissa: no ar em 24h. */
+const pag = () => (CFG.mensalidade ? 'investimento baixo' : 'pagamento único, sem mensalidade');
 const MODELOS = [
-  (l, k) => `${saud()}! Vi a *${l.nome}* no Google${nota(l) ? ` — ${nota(l)}, parabéns` : ''} 👏\n\nSó que quem pesquisa ${cat(l)} em ${cid(l)} e não acha um site acaba fechando com o concorrente que passa mais confiança.\n\nJá deixei o site de vocês pronto, olha:\n${k}\n\nPosso colocar no ar essa semana?\n${assinatura()}`,
-  (l, k) => `${saud()}! A *${l.nome}* já tem a reputação${nota(l) ? ` (${nota(l)})` : ''}. Falta a vitrine.\n\nSem site, parte de quem procura vocês no Google nem chega no seu WhatsApp.\n\nMontei a prévia com as fotos e avaliações de vocês:\n${k}\n\nFaz sentido eu ativar pra vocês começarem a receber esses contatos?\n${assinatura()}`,
-  (l, k) => `${saud()}, tudo bem? Encontrei a *${l.nome}* pesquisando ${cat(l)} em ${cid(l)}${nota(l) ? ` — ${nota(l)}` : ''}.\n\nVocês atendem bem, mas sem site o cliente novo não tem onde conferir serviços e contato, e escolhe outro.\n\nO site de vocês já está pronto:\n${k}\n\nQuer que eu deixe no ar em 48h?\n${assinatura()}`,
-  (l, k) => `${saud()}! Passei pela *${l.nome}* no Google Maps${nota(l) ? ` (${nota(l)})` : ''}.\n\nSite profissional aberto 24h, com seus serviços e botão direto pro WhatsApp: é o que faz quem pesquisa virar cliente.\n\nFiz o de vocês, dá uma olhada:\n${k}\n\nPosso te mostrar como fica no celular e já deixar ativo?\n${assinatura()}`,
+  (l, k) => `${saud()}! Vi a *${l.nome}* no Google${nota(l) ? ` — ${nota(l)}` : ''} 👏\n\nSem site, quem pesquisa ${cat(l)} em ${cid(l)} acaba no concorrente. Já deixei o de vocês pronto, sem precisar fazer nada:\n${k}\n\n${pag()[0].toUpperCase() + pag().slice(1)} e no ar em 24h. Posso ativar?\n${assinatura()}`,
+  (l, k) => `${saud()}! A *${l.nome}* já tem a reputação${nota(l) ? ` (${nota(l)})` : ''}. Falta a vitrine.\n\nO site de vocês está pronto, com suas fotos e avaliações, levando o cliente direto pro WhatsApp:\n${k}\n\nVocê só aprova, ajusto o que quiser e em 24h está no ar. Bora?\n${assinatura()}`,
+  (l, k) => `${saud()}! Encontrei a *${l.nome}* pesquisando ${cat(l)} em ${cid(l)}${nota(l) ? ` (${nota(l)})` : ''}.\n\nSem site, o cliente novo não acha seus serviços e escolhe outro. Resolvi isso pra vocês:\n${k}\n\nSem trabalho pra você e ${pag()}: aprovou, em 24h está no ar. Quer?\n${assinatura()}`,
+  (l, k) => `${saud()}! Passei pela *${l.nome}* no Google Maps${nota(l) ? ` (${nota(l)})` : ''}.\n\nFiz o site de vocês: serviços, fotos, avaliações e botão direto pro WhatsApp, aberto 24h:\n${k}\n\nNão precisa entender de internet nem ter tempo livre. Coloco no ar em 24h?\n${assinatura()}`,
 ];
 const MODELOS_SOCIAL = [
-  (l, k) => `${saud()}! Vi que a *${l.nome}* usa o Instagram como site${nota(l) ? ` (e tem ${nota(l)}, top!)` : ''}.\n\nO Insta é ótimo pra quem já segue vocês, mas o Google não mostra Instagram como site. Quem pesquisa ${cat(l)} em ${cid(l)} cai no concorrente.\n\nMontei o site de vocês:\n${k}\n\nQuer que eu coloque no ar essa semana?\n${assinatura()}`,
-  (l, k) => `${saud()}! A *${l.nome}* manda bem no Instagram${nota(l) ? ` e no Google (${nota(l)})` : ''}.\n\nSó falta um site de verdade: é ele que aparece quando alguém pesquisa ${cat(l)} em ${cid(l)} e leva direto pro seu WhatsApp.\n\nJá está pronto, olha:\n${k}\n\nPosso ativar pra vocês?\n${assinatura()}`,
+  (l, k) => `${saud()}! Vi que a *${l.nome}* usa o Instagram como site${nota(l) ? ` (${nota(l)}, top!)` : ''}.\n\nO Google não mostra Instagram como site, e quem pesquisa ${cat(l)} em ${cid(l)} cai no concorrente. O de vocês já está pronto:\n${k}\n\nNão substitui o Insta, soma. ${pag()[0].toUpperCase() + pag().slice(1)}, no ar em 24h. Posso ativar?\n${assinatura()}`,
+  (l, k) => `${saud()}! A *${l.nome}* manda bem no Instagram${nota(l) ? ` e no Google (${nota(l)})` : ''}.\n\nFalta o site: é ele que aparece no Google e leva direto pro seu WhatsApp. Já deixei pronto:\n${k}\n\nVocê só aprova e em 24h está no ar, ${pag()}. Bora?\n${assinatura()}`,
 ];
 const modeloAbertura = (l, k) => { const M = l.siteTipo === 'social' ? MODELOS_SOCIAL : MODELOS; return M[h(l.id || l.nome) % M.length](l, k); };
 
 /* follow-ups: 1 reforça benefício · 2 quebra objeção de preço · 3 porta aberta */
 const FOLLOWUPS = {
   1: (l, k) => `Oi! Conseguiu ver o site da *${l.nome}*? 👀\n${k}\n\nCom ele no ar, quem procura vocês no Google cai direto no seu WhatsApp, 24h por dia. Posso ativar?`,
-  2: (l) => `Oi! Pra facilitar: o site completo da *${l.nome}* sai por ${money(CFG.preco)}${CFG.mensalidade ? ` + ${money(CFG.mensalidade)}/mês` : ', pagamento único'}, pronto em até 48h e com os ajustes que você quiser.\n\nUm único cliente novo já paga esse investimento. Fechamos?`,
-  3: (l) => `Oi! Não quero tomar seu tempo 🙂 Vou arquivar o site da *${l.nome}* por aqui.\n\nSe quiser colocar no ar, é só responder "quero" que eu ativo em 48h.`,
+  2: (l) => `Oi! Pra facilitar: o site completo da *${l.nome}* sai por ${money(CFG.preco)}${CFG.mensalidade ? ` + ${money(CFG.mensalidade)}/mês` : ', pagamento único'}, pronto em até 24h e com os ajustes que você quiser.\n\nUm único cliente novo já paga esse investimento. Fechamos?`,
+  3: (l) => `Oi! Não quero tomar seu tempo 🙂 Vou arquivar o site da *${l.nome}* por aqui.\n\nSe quiser colocar no ar, é só responder "quero" que eu ativo em 24h.`,
 };
 const MODEL = 'claude-opus-5-5';
 const money = (v) => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -49,7 +51,7 @@ const SISTEMA = () => `Você é o vendedor de ${DONO()}${CFG.empresa ? ` (${CFG.
 O PRODUTO
 - O cliente já recebeu o site PRONTO dele (link na conversa), feito com as fotos, avaliações e informações reais do negócio no Google.
 - Botão de WhatsApp, rota no Google Maps, horários, galeria e avaliações. Ajustes de textos, fotos, cores e preços sem custo antes de publicar.
-- Investimento: ${money(CFG.preco)}${CFG.mensalidade ? ` + ${money(CFG.mensalidade)}/mês` : ' (pagamento único)'}. No ar em até 48h após a aprovação.
+- Investimento: ${money(CFG.preco)}${CFG.mensalidade ? ` + ${money(CFG.mensalidade)}/mês` : ' (pagamento único)'}. No ar em até 24h após a aprovação.
 
 O QUE VOCÊ VENDE (benefício antes de característica)
 Profissionalismo e credibilidade; vitrine digital aberta 24h; presença profissional no Google; serviços e preços organizados num só lugar; mais contatos chegando no WhatsApp. O site é investimento em imagem e captação de clientes.
@@ -59,7 +61,7 @@ REGRAS DE COMUNICAÇÃO
 - Toda mensagem tem intenção comercial e termina conduzindo para a decisão, de preferência com uma pergunta de fechamento.
 - Nunca demonstre desespero. Não aceite "vou pensar" como fim: descubra a dúvida real com uma pergunta.
 - Técnicas: quebra de objeção, prova de valor (o site já está pronto e é dele), ancoragem (um cliente novo já paga o investimento), redução de risco (ajustes sem custo antes de publicar), fechamento por perguntas.
-- Urgência e escassez só quando verdadeiras (ex.: entrega em 48h). NUNCA invente números, estatísticas, porcentagens, depoimentos, prazos ou garantias. Não prometa posição no Google nem quantidade de clientes.
+- Urgência e escassez só quando verdadeiras (ex.: entrega em 24h). NUNCA invente números, estatísticas, porcentagens, depoimentos, prazos ou garantias. Não prometa posição no Google nem quantidade de clientes.
 - Use no máximo 1 emoji por mensagem.
 
 OBJEÇÕES (modelo de resposta, adapte ao contexto)
@@ -134,8 +136,9 @@ Escreva a PRIMEIRA mensagem de WhatsApp para o dono deste negócio, no estilo do
 1) gancho com elogio real (nota/avaliações);
 2) o problema: ${l.siteTipo === 'social' ? 'o Google não mostra Instagram como site, então quem pesquisa a categoria na cidade vai para o concorrente' : 'sem site, quem pesquisa a categoria na cidade escolhe o concorrente que passa mais confiança'};
 3) a solução já pronta: o site deles, neste link, em uma linha própria: ${link}
-4) fechamento por pergunta, direto (ex.: "Posso colocar no ar essa semana?").
-Assine como ${CFG.meuNome}${CFG.empresa ? ` — ${CFG.empresa}` : ''}. Máximo de 6 linhas curtas. Sem números ou porcentagens inventados. Varie a forma de escrever.`;
+4) quebre antes que apareçam 1 ou 2 objeções numa frase curta: tempo ("já está pronto, você só aprova"), custo (${CFG.mensalidade ? 'investimento baixo' : 'pagamento único, sem mensalidade'}), complexidade ("não precisa entender de internet")${l.siteTipo === 'social' ? ', Instagram ("não substitui o Insta, soma")' : ''};
+5) premissa: fica no ar em 24h; feche com pergunta direta (ex.: "Posso ativar?").
+Assine como ${CFG.meuNome}${CFG.empresa ? ` — ${CFG.empresa}` : ''}. Máximo de 7 linhas curtas, no máximo uns 380 caracteres. Sem números ou porcentagens inventados. Varie a forma de escrever.`;
   try {
     const { mensagem } = await pedir(SISTEMA(), user, ABERTURA_SCHEMA);
     if (mensagem.includes(link)) return mensagem.trim();
@@ -166,8 +169,8 @@ Escreva a próxima mensagem para o CLIENTE e escolha a ação.`;
 export async function followup(l, link, n) {
   const objetivo = {
     1: `reforçar o BENEFÍCIO (quem procura no Google cai direto no WhatsApp dele, 24h) e mandar o link de novo (${link}); termine com pergunta de fechamento`,
-    2: `quebrar a objeção de PREÇO: ${money(CFG.preco)}${CFG.mensalidade ? ` + ${money(CFG.mensalidade)}/mês` : ', pagamento único'}, pronto em 48h, ajustes sem custo; um único cliente novo já paga o investimento; termine com "Fechamos?" ou parecido`,
-    3: 'último toque, curto e educado: vai arquivar o site dele, mas se quiser é só responder "quero" que ativa em 48h',
+    2: `quebrar a objeção de PREÇO: ${money(CFG.preco)}${CFG.mensalidade ? ` + ${money(CFG.mensalidade)}/mês` : ', pagamento único'}, pronto em 24h, ajustes sem custo; um único cliente novo já paga o investimento; termine com "Fechamos?" ou parecido`,
+    3: 'último toque, curto e educado: vai arquivar o site dele, mas se quiser é só responder "quero" que ativa em 24h',
   }[n];
   const user = `${fatos(l)}
 Você mandou o site pronto dele e não teve resposta. Escreva o follow-up ${n} (no máximo 3 linhas) com este objetivo: ${objetivo}. Não repita a mensagem anterior.`;

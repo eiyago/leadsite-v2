@@ -62,7 +62,7 @@ Com 1 chip, a cerca de 30 a 40 abordagens por dia, dá para fazer de **700 a 1.0
 - **Mais chips** (2 ou 3 robôs, um por chip/pasta), cada um em uma cidade.
 - **Mais cidades**: mude `CIDADE` no `.env` quando Foz esgotar (Cascavel, Toledo, Medianeira, Maringá…).
 - **Responder rápido** quando o robô te chamar: o lead quente esfria em horas.
-- Ajuste `PRECO` para facilitar o "sim" (R$ 250 com entrega em 48h já é um bom argumento).
+- Ajuste `PRECO` para facilitar o "sim" (R$ 250 com entrega em 24h já é um bom argumento).
 
 ## Arquivos
 

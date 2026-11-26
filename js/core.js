@@ -61,13 +61,13 @@ Se quiser, ajusto cores, fotos e serviços sem compromisso.`,
       label: 'Follow-up 2 (oferta)',
       text: `Oi! Esta semana consigo colocar o site da *{nome}* no ar por {preco} + {mensalidade}/mês, já com domínio, hospedagem e botão de WhatsApp.
 
-Quer que eu reserve sua vaga? Entrego em até 48h.`,
+Quer que eu reserve sua vaga? Entrego em até 24h.`,
     },
     breakup: {
       label: 'Encerramento (último toque)',
       text: `Oi! Não quero incomodar 🙂 Vou arquivar a prévia da *{nome}* por aqui.
 
-Se mudar de ideia, é só me chamar que coloco no ar em 48h. Sucesso!`,
+Se mudar de ideia, é só me chamar que coloco no ar em 24h. Sucesso!`,
     },
     proposta: {
       label: 'Proposta',
@@ -79,7 +79,7 @@ Se mudar de ideia, é só me chamar que coloco no ar em 48h. Sucesso!`,
 ✅ Domínio + hospedagem + suporte
 
 💰 Investimento: {preco} + {mensalidade}/mês
-⏱️ Entrega: até 48h após aprovação
+⏱️ Entrega: até 24h após aprovação
 
 Posso seguir?`,
     },
@@ -106,7 +106,7 @@ Qualquer imprevisto é só me avisar por aqui. Até lá!
     ['Já tenho Instagram, não preciso de site', 'O Instagram é ótimo pra quem já te segue. O site é pra quem ainda não te conhece e está pesquisando no Google agora. Um não substitui o outro — o site leva esse cliente direto pro seu WhatsApp.'],
     ['Vou pensar', 'Claro! Pra te ajudar a pensar: o que te deixaria mais seguro — ver um exemplo de cliente meu, ou ajustar a prévia com suas fotos primeiro?'],
     ['Está caro', 'Comparado a quê? Se o site trouxer 2 clientes por mês, ele se paga já no primeiro mês. E você não precisa pagar tudo de uma vez — posso parcelar.'],
-    ['Meu sobrinho/conhecido faz', 'Ótimo ter alguém de confiança! A diferença é que eu entrego em 48h, cuido da hospedagem, do Google e do suporte. Se quiser, mostra a prévia pra ele e compara.'],
+    ['Meu sobrinho/conhecido faz', 'Ótimo ter alguém de confiança! A diferença é que eu entrego em 24h, cuido da hospedagem, do Google e do suporte. Se quiser, mostra a prévia pra ele e compara.'],
     ['Já tentei e não deu resultado', 'Faz sentido ficar com o pé atrás. Normalmente o problema é site sem botão de WhatsApp e que não aparece no Google. A prévia já foi feita pensando nisso. Posso te mostrar o que muda?'],
     ['Manda por e-mail / depois vejo', 'Mando sim! Pra não virar mais um e-mail esquecido, que tal 5 minutos amanhã pra eu te mostrar na tela? Qual horário é melhor, manhã ou tarde?'],
     ['Não tenho tempo', 'Por isso eu faço tudo: você só aprova a prévia. Leva menos tempo que responder esta mensagem 🙂'],
