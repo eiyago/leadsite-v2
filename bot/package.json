@@ -8,12 +8,15 @@
     "start": "node src/index.js",
     "check": "node --check src/index.js && node --check src/db.js && node --check src/places.js && node --check src/site-link.js && node --check src/ai.js && node --check src/wa.js && node --check src/robo.js && node --check src/server.js && node --check src/config.js"
   },
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "dependencies": {
     "@anthropic-ai/sdk": "latest",
     "@whiskeysockets/baileys": "^6.7.9",
     "dotenv": "^16.4.5",
     "pino": "^9.4.0",
+    "qrcode": "^1.5.4",
     "qrcode-terminal": "^0.12.0"
   }
 }

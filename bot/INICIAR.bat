@@ -1,6 +1,8 @@
 @echo off
 title LeadSite Robo
 cd /d "%~dp0"
+set "PATH=%ProgramFiles%\nodejs;%ProgramFiles%\Git\cmd;%PATH%"
+chcp 65001 >nul
 if not exist node_modules (
   echo Instalando dependencias pela primeira vez...
   call npm install

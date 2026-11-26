@@ -15,6 +15,8 @@ let aoProprio = () => {};
 const enviadasPeloRobo = new Set();
 const enviandoPara = new Set();
 
+let ultimoQR = '';
+export const qrAtual = () => (pronto ? '' : ultimoQR);
 export const conectado = () => pronto;
 export function onMensagem(fn) { aoReceber = fn; }
 /* mensagens que VOCÊ digitou no celular do chip (o robô para de responder esse lead) */
@@ -26,7 +28,8 @@ export async function iniciar() {
   sock = makeWASocket({ version, auth: state, logger: pino({ level: 'silent' }), markOnlineOnConnect: false, syncFullHistory: false, browser: ['LeadSite', 'Chrome', '1.0'] });
   sock.ev.on('creds.update', saveCreds);
   sock.ev.on('connection.update', ({ connection, lastDisconnect, qr }) => {
-    if (qr) { console.log('\n📱 Escaneie com o WhatsApp do CHIP DE VENDAS (Aparelhos conectados > Conectar aparelho):\n'); qrcode.generate(qr, { small: true }); }
+    if (qr) ultimoQR = qr;
+    if (qr) { console.log('\n🌐 Ou abra no navegador: http://localhost:3210/qr'); console.log('\n📱 Escaneie com o WhatsApp do CHIP DE VENDAS (Aparelhos conectados > Conectar aparelho):\n'); qrcode.generate(qr, { small: true }); }
     if (connection === 'open') { pronto = true; console.log('✅ WhatsApp conectado'); }
     if (connection === 'close') {
       pronto = false;
