@@ -80,6 +80,7 @@ export async function salvarMidia(id, k = {}) {
   if (k.slogan) sx.hl = String(k.slogan).slice(0, 80);
   if (k.sub) sx.sub = String(k.sub).slice(0, 180);
   if (k.instagram) sx.ig = String(k.instagram).replace(/^@/, '');
+  if (k.nicho) sx.k = String(k.nicho); // corrige o tipo de negócio quando a categoria do Google engana (ex.: podologia cadastrada como manicure)
   const up = { id, sx, midiaEm: new Date().toISOString(), linkPrevia: null };
   if (fotos.length) up.fotos = fotos;
   if (k.avaliacoes?.length) up.avaliacoes = k.avaliacoes.slice(0, 6).map((v) => ({ a: String(v.a || 'Cliente').slice(0, 60), r: Number(v.r) || 5, t: String(v.t).length > 280 ? String(v.t).slice(0, 277).trim() + '…' : String(v.t) }));
