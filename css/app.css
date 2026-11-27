@@ -198,3 +198,20 @@ code{background:var(--bg);padding:1px 5px;border-radius:5px;font-size:12px}
 .mh-bar i{display:block;height:100%;background:linear-gradient(90deg,#0ea5e9,#34d399)}
 #view-inicio{margin:-20px -24px -60px}
 @media (max-width:820px){#view-inicio{margin:-14px}}
+/* gerador de sites */
+.gerar{display:grid;grid-template-columns:minmax(320px,440px) 1fr;gap:16px;align-items:start}
+.gerar-form textarea{font:inherit;resize:vertical}
+.gerar-prev{padding:0;overflow:hidden;position:sticky;top:12px}
+.gerar-prev iframe{width:100%;height:calc(100vh - 120px);border:0;display:block;background:#f8fafc}
+.gerar-ok{margin-top:14px;padding:12px;border-radius:12px;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.35);display:flex;flex-direction:column;gap:8px}
+.gerar-ok input{font:inherit;padding:8px 10px;border-radius:8px;border:1px solid #cbd5e1}
+@media (max-width:900px){.gerar{grid-template-columns:1fr}.gerar-prev{position:static}.gerar-prev iframe{height:70vh}}
+/* instagram */
+.ig-passos{margin:12px 0 16px;padding-left:20px;line-height:1.7}
+.ig-card{border:1px solid #e2e8f0;border-radius:14px;padding:14px;margin-bottom:12px;display:flex;flex-direction:column;gap:10px}
+.ig-h{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap}
+.ig-msgs{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ig-msgs>div{background:#f8fafc;border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:6px}
+.ig-msgs p{margin:0;font-size:14px;line-height:1.5;white-space:pre-wrap}
+.ig-msgs .btn{align-self:flex-start}
+@media (max-width:700px){.ig-msgs{grid-template-columns:1fr}}

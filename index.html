@@ -16,6 +16,8 @@
       <a href="#/inicio" data-view="inicio">🛰️ JARVIS</a>
       <a href="#/buscar" data-view="buscar">Buscar leads</a>
       <a href="#/pipeline" data-view="pipeline">Pipeline <span class="pill" id="navFollow" hidden></span></a>
+      <a href="#/gerar" data-view="gerar">🧩 Gerar site</a>
+      <a href="#/insta" data-view="insta">📸 Instagram</a>
       <a href="#/metas" data-view="metas">Metas</a>
       <a href="#/config" data-view="config">Configurações</a>
     </nav>
@@ -44,6 +46,51 @@
         <div class="meta-hist" id="metaHist"></div>
         <h3 style="margin:22px 0 8px">Metas anteriores</h3>
         <div class="meta-hist" id="metaAnt"></div>
+      </div>
+    </section>
+
+    <!-- GERAR SITE (lead de fora) -->
+    <section class="view" id="view-gerar" hidden>
+      <div class="gerar">
+        <form class="panel gerar-form" id="gerarForm">
+          <h2 style="margin:0 0 4px">Gerador de sites</h2>
+          <p class="muted small" style="margin:0 0 12px">Para leads que você achou por fora. Sai como <b>prévia</b> (faixa e botão da sua empresa no rodapé); quando pagar, clique em <b>Efetivar</b> e mande o link oficial.</p>
+          <div class="row"><label class="f grow2"><span>Buscar no Google (preenche tudo)</span><input name="busca" placeholder="Barbearia do Zé, Foz do Iguaçu"></label><button type="button" class="btn" id="gerarBuscar" style="align-self:flex-end">🔎 Buscar</button></div>
+          <div class="row">
+            <label class="f grow2"><span>Nome do negócio *</span><input name="nome" required></label>
+            <label class="f grow"><span>Nicho *</span><input name="categoria" list="cats" required placeholder="Barbearia"></label>
+          </div>
+          <div class="row">
+            <label class="f grow"><span>WhatsApp / telefone *</span><input name="telefone" required placeholder="(45) 99999-9999"></label>
+            <label class="f grow"><span>Cidade / UF</span><input name="cidade" placeholder="Foz do Iguaçu, PR"></label>
+          </div>
+          <label class="f"><span>Endereço</span><input name="endereco"></label>
+          <div class="row">
+            <label class="f grow"><span>Instagram</span><input name="instagram" placeholder="@perfil"></label>
+            <label class="f"><span>Nota Google</span><input name="rating" type="number" step="0.1" min="0" max="5"></label>
+            <label class="f"><span>Avaliações</span><input name="reviews" type="number" min="0"></label>
+          </div>
+          <label class="f"><span>Logo (endereço da imagem)</span><input name="logo" placeholder="https://… (clique com o botão direito na logo → Copiar endereço da imagem)"></label>
+          <label class="f"><span>Fotos reais (uma por linha)</span><textarea name="fotos" rows="3" placeholder="https://…jpg"></textarea></label>
+          <label class="f"><span>Sobre o negócio (opcional)</span><textarea name="resumo" rows="2"></textarea></label>
+          <div class="row actions"><button class="btn primary" id="gerarBtn">✨ Gerar prévia</button><button type="button" class="btn" id="gerarLimpar">Limpar</button></div>
+          <div id="gerarOut"></div>
+        </form>
+        <div class="panel gerar-prev"><iframe id="gerarFrame" title="Prévia do site"></iframe></div>
+      </div>
+    </section>
+
+    <!-- INSTAGRAM -->
+    <section class="view" id="view-insta" hidden>
+      <div class="panel">
+        <div class="metas-top"><div><h2 style="margin:0">Instagram</h2><p class="muted small" style="margin:4px 0 0" id="igResumo">Carregando…</p></div><button class="btn" id="igAtualizar">↻ Atualizar</button></div>
+        <ol class="ig-passos muted small">
+          <li>Abra o perfil. <b>Privado → Pular.</b></li>
+          <li>Curta <b>1 publicação</b>.</li>
+          <li>Tem story? <b>Responda o story</b> com o texto “Story”. Não tem? Mande o texto “Direct”.</li>
+          <li>Clique em <b>Enviei</b>. Esse lead nunca recebe WhatsApp (e vice-versa).</li>
+        </ol>
+        <div id="igLista"></div>
       </div>
     </section>
 
@@ -208,6 +255,7 @@
   <script src="js/core.js"></script>
   <script src="js/jarvis-core.js"></script>
   <script src="js/jarvis-ui.js"></script>
+  <script src="js/gerar-insta.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

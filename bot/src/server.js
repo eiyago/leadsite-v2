@@ -4,6 +4,7 @@ import { CFG, agoraBR } from './config.js';
 import { DB } from './db.js';
 import QRCode from 'qrcode';
 import { conectado, qrAtual } from './wa.js';
+import * as F from './funil.js';
 import { cotaHoje, teste, abordarAgora, leadManual, cidadeAtual } from './robo.js';
 
 const PAGINA_QR = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Conectar WhatsApp — Robô LeadSite</title>
@@ -17,7 +18,7 @@ if(!j.img){c.innerHTML='<h1>Gerando QR…</h1><p>Aguarde alguns segundos.</p>';}
 else c.innerHTML='<h1>Conecte o chip de vendas</h1><img src="'+j.img+'" alt="QR"><ol><li>No celular do <b>chip de vendas</b>, abra o WhatsApp</li><li>Toque em ⋮ ou Configurações → <b>Aparelhos conectados</b></li><li><b>Conectar um aparelho</b> e aponte para o QR</li></ol><small>O QR muda sozinho a cada ~20s.</small>';}catch(e){}
 setTimeout(t,3000)}t();</script></body></html>`;
 
-const ETAPA = { abordado: 'abordado', followup1: 'abordado', followup2: 'followup', followup3: 'followup', conversando: 'followup', negociando: 'agendado', convertido: 'convertido', optout: 'perdido', perdido: 'perdido' };
+const ETAPA = { oi: 'abordado', pitch: 'abordado', valor: 'followup', preco: 'followup', ig_enviado: 'abordado', abordado: 'abordado', followup1: 'abordado', followup2: 'followup', followup3: 'followup', conversando: 'followup', negociando: 'agendado', convertido: 'convertido', optout: 'perdido', perdido: 'perdido' };
 
 function paraApp(l) {
   return {
@@ -64,6 +65,22 @@ export function iniciarServidor() {
     }
     if (req.method === 'POST' && url.pathname === '/teste') {
       return teste().then((r) => send({ ok: true, ...(r || {}) })).catch((e) => send({ ok: false, erro: e.message }, 500));
+    }
+    /* fila do Instagram: leads sem celular que têm Instagram (nunca recebem WhatsApp) */
+    if (url.pathname === '/instagram') {
+      const t = agoraBR(); const hoje = DB.leads().filter((l) => l.igEm && l.igEm.startsWith(t.data)).length;
+      const fila = DB.leads().filter((l) => l.etapa === 'ig_fila').sort((a, b) => (b.temp === 'quente') - (a.temp === 'quente') || b.score - a.score)
+        .slice(0, 30).map((l) => ({ id: l.id, nome: l.nome, categoria: l.categoria, cidade: l.cidade, temp: l.temp, rating: l.rating, reviews: l.reviews,
+          insta: (l.site.match(/instagram\.com\/([^/?#]+)/i) || [])[1] || '', story: F.insta(l, true), direct: F.insta(l, false) }));
+      return send({ hoje, limite: 20, fila, enviados: DB.leads().filter((l) => l.etapa === 'ig_enviado').length });
+    }
+    if (req.method === 'POST' && url.pathname.startsWith('/instagram/')) {
+      const [, , id, acao] = url.pathname.split('/').map(decodeURIComponent);
+      if (!DB.lead(id)) return send({ ok: false, erro: 'lead não encontrado' }, 404);
+      if (acao === 'enviado') DB.upsert({ id, etapa: 'ig_enviado', canal: 'instagram', igEm: new Date().toISOString() });
+      else if (acao === 'pular') DB.upsert({ id, etapa: 'ig_pulado' });
+      else if (acao === 'respondeu') DB.upsert({ id, etapa: 'negociando', canal: 'instagram', respondeu: true, respondeuEm: new Date().toISOString() });
+      return send({ ok: true });
     }
     if (req.method === 'POST' && url.pathname === '/pausar') { DB.setMeta('pausado', true); return send({ ok: true }); }
     if (req.method === 'POST' && url.pathname === '/retomar') { DB.setMeta('pausado', false); return send({ ok: true }); }

@@ -51,6 +51,7 @@ function route() {
   $$('#nav a').forEach((a) => a.classList.toggle('on', a.dataset.view === v));
   if (v === 'inicio' && !route._jv) { route._jv = true; JVUI.montar($('#view-inicio'), { nav: (d) => (location.hash = '#/' + d), modo: 'site' }); }
   if (v === 'metas') renderMetas();
+  if (v === 'insta') renderInsta();
   if (v === 'pipeline') renderPipeline();
   if (v === 'config') renderConfig();
   if (v === 'buscar') $('#demoBanner').hidden = !!S.cfg.apiKey || !S.results.length;
@@ -820,7 +821,7 @@ function bindResults() {
     f.elements.categoria.value = last.ctx.categoria || ''; f.elements.cidade.value = last.ctx.cidade || ''; f.elements.bairro.value = last.ctx.bairro || '';
     $('#emptySearch').hidden = true; renderResults();
   }
-  bindResults(); bindKanban(); bindDrawer(); bindQueue(); bindConfig(); bindMetas();
+  bindResults(); bindKanban(); bindDrawer(); bindQueue(); bindConfig(); bindMetas(); bindGerar(); bindInsta();
   renderKpis();
   window.addEventListener('hashchange', route); route();
 })();

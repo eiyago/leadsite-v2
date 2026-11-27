@@ -3,7 +3,8 @@ import { CFG, agoraBR } from './config.js';
 import { DB } from './db.js';
 import { buscar, enriquecer, buscarNegocio, telefoneInfo, pontuar } from './places.js';
 import { linkPrevia } from './site-link.js';
-import { abertura, responder, followup, modoSemIA } from './ai.js';
+import { modoSemIA } from './ai.js';
+import * as F from './funil.js';
 import { conectado, enviar, jidDoNumero, onMensagem, onMinhaMensagem } from './wa.js';
 
 const DIA = 864e5;
@@ -48,7 +49,10 @@ async function avisar(texto) {
 const linkChat = (l) => `https://wa.me/${l.wa}`;
 
 /* ---------- mineração ---------- */
-const encaixa = (l) => l.temp === 'quente' && l.siteTipo !== 'tem' && l.mobile; // quente, sem site, com celular
+/* quente OU morno, sem site. Celular → WhatsApp; sem celular mas com Instagram → fila do Instagram (nunca os dois) */
+const temInsta = (l) => /instagram\.com\//i.test(l.site || '');
+const encaixa = (l) => ['quente', 'morno'].includes(l.temp) && l.siteTipo !== 'tem' && (l.mobile || temInsta(l));
+const canalDe = (l) => (l.mobile ? 'whatsapp' : 'instagram');
 
 async function minerar() {
   const cidade = cidadeAtual();
@@ -59,12 +63,13 @@ async function minerar() {
   let novos = 0;
   for (const l of achados) {
     if (DB.lead(l.id) || !encaixa(l)) continue;
-    DB.upsert({ ...l, etapa: 'fila', mineradoEm: new Date().toISOString() });
+    const canal = canalDe(l);
+    DB.upsert({ ...l, canal, etapa: canal === 'instagram' ? 'ig_fila' : 'fila', mineradoEm: new Date().toISOString() });
     novos++;
   }
   // conta rodadas seguidas sem nada novo: quando passar por TODOS os nichos sem achar nada, a cidade esgotou
   DB.setMeta('rodadasSecas', novos ? 0 : (DB.meta.rodadasSecas || 0) + 1);
-  log(`   +${novos} leads quentes sem site na fila`);
+  log(`   +${novos} leads sem site (quentes/mornos) · Instagram na fila: ${DB.leads().filter((x) => x.etapa === 'ig_fila').length}`);
   return novos;
 }
 
@@ -127,40 +132,79 @@ async function proximoNovo() {
   // escolhe o nicho menos abordado nas últimas 24h; dentro dele, o lead mais quente
   const recentes = DB.leads().filter((l) => l.abordadoEm && dias(l.abordadoEm) < 1);
   const usos = (c) => recentes.filter((l) => l.categoria === c).length;
-  return fila.sort((a, b) => (b.manual ? 1 : 0) - (a.manual ? 1 : 0) || usos(a.categoria) - usos(b.categoria) || b.score - a.score || b.reviews - a.reviews)[0];
+  const q = (l) => (l.temp === 'quente' ? 1 : 0); // quente primeiro, morno depois
+  return fila.filter((l) => l.canal !== 'instagram').sort((a, b) => (b.manual ? 1 : 0) - (a.manual ? 1 : 0) || q(b) - q(a) || usos(a.categoria) - usos(b.categoria) || b.score - a.score || b.reviews - a.reviews)[0];
 }
 
+/* follow-ups do funil: só para quem ficou sem responder a MINHA última mensagem
+   FU1 (promo R$150): 3h depois, no mesmo dia; se já estiver tarde, na manhã seguinte
+   FU2 (último contato): 2 a 3 dias depois do FU1 · sem resposta 4 dias depois → perdido */
+const ultimaReal = (l) => [...(l.conversa || [])].reverse().find((m) => m.papel !== 'auto');
 function proximoFollowup() {
+  const t = agoraBR();
   for (const l of DB.leads()) {
-    if (l.respondeu || l.humano) continue;
-    const d = dias(l.abordadoEm);
-    // 1º benefício (dia 2) · 2º quebra de preço (dia 5) · 3º porta aberta (dia 9) · perdido (dia 14)
-    if (l.etapa === 'abordado' && d >= CFG.followup1) return { l, n: 1 };
-    if (l.etapa === 'followup1' && d >= CFG.followup2) return { l, n: 2 };
-    if (l.etapa === 'followup2' && d >= CFG.followup2 + 4) return { l, n: 3 };
-    if (l.etapa === 'followup3' && d >= CFG.followup2 + 9) { DB.upsert({ id: l.id, etapa: 'perdido' }); }
+    if (l.humano || !['pitch', 'valor', 'preco', 'abordado', 'followup1', 'followup2', 'followup3'].includes(l.etapa)) continue;
+    const u = ultimaReal(l); if (!u || u.papel !== 'eu') continue;
+    const horas = (Date.now() - new Date(u.em)) / 36e5;
+    const mesmoDia = new Date(u.em).toLocaleDateString('sv-SE', { timeZone: CFG.fuso }) === t.data;
+    const fu = l.fu || 0;
+    if (fu === 0 && horas >= 3 && (!mesmoDia || t.hora < 17)) return { l, n: 1 };
+    if (fu === 1 && horas >= 44) return { l, n: 2 };
+    if (fu >= 2 && horas >= 96) DB.upsert({ id: l.id, etapa: 'perdido' });
   }
   return null;
+}
+
+/* depois do "oi": se não responder em 25–40 min, manda a apresentação mesmo assim (uma por vez) */
+function pitchPendente() {
+  return DB.leads().find((l) => l.etapa === 'oi' && !l.humano && Date.now() >= (l.pitchApos || 0));
 }
 
 /* ---------- ações ---------- */
 async function abordar(l) {
   const jid = await jidDoNumero(l.wa);
-  if (!jid) { DB.upsert({ id: l.id, etapa: 'sem_whatsapp' }); log(`   ${l.nome}: sem WhatsApp, pulando`); return false; }
+  if (!jid) { DB.upsert({ id: l.id, ...(temInsta(l) ? { etapa: 'ig_fila', canal: 'instagram' } : { etapa: 'sem_whatsapp' }) }); log(`   ${l.nome}: sem WhatsApp, pulando`); return false; }
   try { await enriquecer(l); } catch (e) { log('   (sem fotos extras)', e.message); }
-  const link = await linkPrevia(l);
-  const msg = await abertura(l, link);
+  const msg = F.oi(l);
   const jidReal = await enviar(jid, msg);
-  DB.upsert({ ...l, jid: jidReal, jids: [...new Set([jid, jidReal])], etapa: 'abordado', abordadoEm: new Date().toISOString(), linkPrevia: link });
+  DB.upsert({ ...l, jid: jidReal, jids: [...new Set([jid, jidReal])], canal: 'whatsapp', etapa: 'oi', fu: 0, abordadoEm: new Date().toISOString(), pitchApos: Date.now() + (25 + Math.random() * 15) * 60e3 });
   DB.log(l.id, 'eu', msg);
-  log(`📤 Abordado: ${l.nome} (${l.score})`);
+  log(`👋 Oi enviado: ${l.nome} (${l.temp}, ${l.categoria})`);
   return true;
 }
 
-async function fazerFollowup({ l, n }) {
-  const msg = await followup(l, l.linkPrevia, n);
+/* manda uma etapa do funil e registra */
+async function etapa(id, nova, texto) {
+  const l = DB.lead(id);
+  await enviar(l.jid, texto);
+  DB.upsert({ id, etapa: nova, [nova + 'Em']: new Date().toISOString() });
+  DB.log(id, 'eu', texto);
+  log(`➡️  ${l.nome}: etapa ${nova}`);
+}
+async function mandarPitch(id) { await etapa(id, 'pitch', F.pitch(DB.lead(id))); }
+async function mandarValor(id) {
+  const l = DB.lead(id);
+  try { await enriquecer(l); } catch { /* segue sem fotos extras */ }
+  const link = await linkPrevia(l);
+  DB.upsert({ ...l, linkPrevia: link });
+  await etapa(id, 'valor', F.valor(DB.lead(id), link));
+}
+async function passarParaDono(id, resumo) {
+  const l = DB.lead(id);
+  DB.upsert({ id, etapa: 'negociando', passadoEm: new Date().toISOString(), resumo });
+  log(`💰 ${l.nome} → com você`);
+  await avisar(`🔥 *${l.nome}* (${l.categoria})\n${resumo}${l.linkPrevia ? `\n\nPrévia: ${l.linkPrevia}` : ''}\nConversa: ${linkChat(l)}\n\nO robô parou com esse lead. Agora é com você: efetive o site no app e mande o Pix.`);
+}
+
+async function fazerFollowup({ l: lead, n }) {
+  let l = lead;
+  if (n === 1 && !l.linkPrevia) {
+    try { await enriquecer(l); } catch { /* segue */ }
+    DB.upsert({ ...l, linkPrevia: await linkPrevia(l) }); l = DB.lead(l.id);
+  }
+  const msg = n === 1 ? F.fu1(l, l.linkPrevia) : F.fu2(l);
   await enviar(l.jid, msg);
-  DB.upsert({ id: l.id, etapa: `followup${n}` });
+  DB.upsert({ id: l.id, fu: n, fuEm: new Date().toISOString() });
   DB.log(l.id, 'eu', msg);
   log(`🔁 Follow-up ${n}: ${l.nome}`);
 }
@@ -177,24 +221,44 @@ async function processarResposta(id) {
   const l = DB.lead(id); if (!l || l.humano || ['negociando', 'optout', 'convertido'].includes(l.etapa)) return;
   if (!podeResponder(agoraBR())) { DB.upsert({ id, pendente: true }); return; }
   DB.upsert({ id, pendente: false });
-  const r = await responder(l, l.linkPrevia);
-  if (r.resposta?.trim()) { await enviar(l.jid, r.resposta.trim()); DB.log(id, 'eu', r.resposta.trim()); }
-  DB.upsert({ id, resumo: r.resumo });
-  if (r.acao === 'passar_para_dono') {
-    DB.upsert({ id, etapa: 'negociando', passadoEm: new Date().toISOString() });
-    if (modoSemIA()) {
-      log(`🔥 ${l.nome} respondeu → avisando você`);
-      await avisar(`🔥 *Lead respondeu!*\n*${l.nome}* (${l.categoria}, ${String(l.rating || '').replace('.', ',')}⭐)\n${r.resumo}\n\nPrévia que ele recebeu: ${l.linkPrevia}\nResponder: ${linkChat(l)}\n\nResponda pelo celular do chip. O robô não responde esse lead.`);
-    } else {
-      log(`💰 ${l.nome} quer fechar → avisando você`);
-      await avisar(`💰 *Lead pronto para fechar!*\n*${l.nome}* (${l.categoria})\n${r.resumo}\n\nPrévia: ${l.linkPrevia}\nConversa: ${linkChat(l)}\n\nO robô parou de responder esse lead. Agora é com você: efetive o site no app e mande o Pix.`);
-    }
-  } else if (r.acao === 'optout') {
-    DB.upsert({ id, etapa: 'optout' });
-    log(`🚫 ${l.nome} não quer contato — nunca mais será abordado`);
-  } else {
-    DB.upsert({ id, etapa: 'conversando' });
+  // tudo o que a pessoa escreveu desde a minha última mensagem
+  const conv = l.conversa || []; let i = conv.length - 1; const dela = [];
+  while (i >= 0 && conv[i].papel !== 'eu') { if (conv[i].papel === 'cliente') dela.unshift(conv[i].texto); i--; }
+  const texto = dela.join(' \n ');
+  const r = F.entender(texto);
+  const curto = texto.slice(0, 200);
+  const fechado = async () => { const m = 'Perfeito! Já vou deixar tudo pronto aqui pra ativar 🙌'; await enviar(l.jid, m); DB.log(id, 'eu', m); };
+  if (r.tipo === 'optout') {
+    const msg = F.despedida(l, r.temSite); await enviar(l.jid, msg); DB.log(id, 'eu', msg);
+    DB.upsert({ id, etapa: 'optout', ...(r.temSite ? { siteTipo: 'tem' } : {}) });
+    return log(`🚫 ${l.nome} sem interesse: nunca mais será abordado`);
   }
+  // já recebeu a promoção (follow-up) ou é conversa antiga: quem responde vai direto pra você
+  if ((l.fu || 0) >= 1 || ['abordado', 'followup1', 'followup2', 'followup3', 'conversando'].includes(l.etapa)) {
+    if (r.tipo === 'fechar') await fechado();
+    return passarParaDono(id, `Respondeu: "${curto}"`);
+  }
+  if (l.etapa === 'oi') return mandarPitch(id);
+  if (l.etapa === 'pitch') {
+    await mandarValor(id);
+    if (r.tipo === 'preco') { await new Promise((ok) => setTimeout(ok, 35e3)); await etapa(id, 'preco', F.preco(DB.lead(id))); }
+    return;
+  }
+  if (l.etapa === 'valor') {
+    if (r.tipo === 'outro' && texto.includes('?')) return passarParaDono(id, `Fez uma pergunta: "${curto}"`);
+    await etapa(id, 'preco', F.preco(DB.lead(id)));
+    if (r.tipo === 'fechar') return passarParaDono(id, `Quer fechar: "${curto}"`);
+    return;
+  }
+  if (l.etapa === 'preco') {
+    if (r.tipo === 'objecao' && !l.objecaoFeita) {
+      const m = F.objecao(l); await enviar(l.jid, m); DB.log(id, 'eu', m); DB.upsert({ id, objecaoFeita: true });
+      return log(`🤝 ${l.nome}: objeção → condição especial`);
+    }
+    if (r.tipo === 'fechar') await fechado();
+    return passarParaDono(id, `${r.tipo === 'fechar' ? 'QUER FECHAR' : 'Respondeu ao preço'}: "${curto}"`);
+  }
+  return passarParaDono(id, `Respondeu: "${curto}"`);
 }
 
 const AUTO = /mensagem autom[aá]tica|resposta autom[aá]tica|grande demanda|hor[aá]rio de atendimento|fora do (nosso )?hor[aá]rio|no momento (n[aã]o|estamos)|em breve (retornaremos|responderemos|entraremos)|retornaremos (o mais|em breve|assim)|agradecemos (o|seu) contato|obrigad[oa] (por|pelo) (entrar em )?contato|seja bem.?vind[oa]|clique no link|fa[cç]a seu agendamento|agende (pelo|por|no) link|nosso card[aá]pio|digite (o n[uú]mero|uma op[cç][aã]o|1)|escolha uma op[cç][aã]o|aguarde (que|um momento|nosso)/i;
@@ -243,6 +307,7 @@ async function aoReceber({ jid, alt, texto }) {
     DB.log(l.id, 'auto', texto);
     if (!l.autoResposta) log(`🤖 ${l.nome}: resposta automática do WhatsApp Business — pedindo para encaminhar ao responsável`);
     DB.upsert({ id: l.id, autoResposta: texto.slice(0, 300) });
+    if (l.etapa === 'oi') { DB.upsert({ id: l.id, pitchApos: Date.now() + (60 + Math.random() * 90) * 1000 }); return; }
     if (!l.pediuEncaminhar) pedirEncaminhar(l.id);
     return;
   }
@@ -362,11 +427,11 @@ export async function teste() {
   try { await enriquecer(l); } catch { /* segue */ }
   const link = await linkPrevia(l);
   DB.upsert({ ...l });
-  const msg = await abertura(l, link);
-  await avisar(`🧪 *TESTE* — é exatamente isto que *${l.nome}* (${l.categoria}, ${String(l.rating).replace('.', ',')}⭐, ${l.reviews} avaliações) vai receber:`);
-  await avisar(msg);
+  const msgs = [`1️⃣ ${F.oi(l)}`, `2️⃣ ${F.pitch(l)}`, `3️⃣ (depois que ele responde)\n${F.valor(l, link)}`, `4️⃣ ${F.preco(l)}`, `🔁 Follow-up 1\n${F.fu1(l, link)}`, `🔁 Follow-up 2\n${F.fu2(l)}`];
+  await avisar(`🧪 *TESTE DO FUNIL*: é isto que *${l.nome}* (${l.categoria}, ${String(l.rating).replace('.', ',')}⭐) receberia, etapa por etapa:`);
+  for (const m of msgs) await avisar(m);
   log(`🧪 Teste enviado para você com o lead ${l.nome}`);
-  return { lead: l.nome, link };
+  return { lead: l.nome, link, mensagens: msgs };
 }
 
 /* ---------- laço principal ---------- */
@@ -378,13 +443,28 @@ async function tick() {
     log('▶️  Pausa programada terminou: retomando com aquecimento do chip');
     if (conectado()) avisar(`▶️ Voltei! Retomando com ritmo leve (${CFG.minPorHora}–${CFG.maxPorHora} por hora, cota ${cotaHoje()} hoje) para reaquecer o chip.`);
   }
+  // WhatsApp parado: leads da fila do WhatsApp que têm Instagram passam a ser do Instagram (nunca os dois)
+  if (DB.meta.pausado || !conectado()) {
+    const ig = DB.leads().filter((l) => l.etapa === 'ig_fila').length;
+    DB.leads().filter((l) => l.etapa === 'fila' && !l.manual && temInsta(l)).sort((a, b) => b.score - a.score).slice(0, Math.max(0, 15 - ig))
+      .forEach((l) => DB.upsert({ id: l.id, etapa: 'ig_fila', canal: 'instagram' }));
+  }
+  // fila do Instagram baixa: minera mais (funciona mesmo com o WhatsApp pausado ou desconectado)
+  if (!ocupado && DB.leads().filter((l) => l.etapa === 'ig_fila').length < 10 && Date.now() - (DB.meta.igMinerado || 0) > 2 * 3600e3) {
+    DB.setMeta('igMinerado', Date.now());
+    ocupado = true;
+    try { for (let i = 0; i < 3; i++) await minerar(); } catch (e) { log('[instagram] mineração:', e.message); } finally { ocupado = false; }
+  }
   if (ocupado || !conectado() || DB.meta.pausado) return;
   ocupado = true;
   try {
     const t = agoraBR();
     // respostas que ficaram para a manhã
     if (podeResponder(t)) for (const l of DB.leads().filter((x) => x.pendente)) await processarResposta(l.id);
-    if (!dentroDaJanela(t) || Date.now() < (DB.meta.proximoEnvio || 0)) return;
+    if (!dentroDaJanela(t)) return;
+    const pp = pitchPendente();
+    if (pp) { await mandarPitch(pp.id); return; }
+    if (Date.now() < (DB.meta.proximoEnvio || 0)) return;
     if (DB.enviadosHoje(t.data) >= cotaHoje()) return;
     const fu = proximoFollowup();
     let enviou = false;
@@ -404,7 +484,18 @@ async function tick() {
   } finally { ocupado = false; }
 }
 
+function migrar() {
+  for (const l of DB.leads()) {
+    if (l.fu !== undefined) continue;
+    if (l.etapa === 'abordado' || l.etapa === 'followup1') DB.upsert({ id: l.id, fu: 0 });
+    else if (l.etapa === 'followup2') DB.upsert({ id: l.id, fu: 1 });
+    else if (l.etapa === 'followup3') DB.upsert({ id: l.id, fu: 2 });
+    else if (l.etapa === 'fila' && !l.mobile) DB.upsert({ id: l.id, canal: 'instagram', etapa: temInsta(l) ? 'ig_fila' : 'sem_whatsapp' });
+  }
+}
+
 export function ligar() {
+  migrar();
   onMensagem(aoReceber);
   onMinhaMensagem(aoMinhaMensagem);
   setInterval(tick, 30e3);
