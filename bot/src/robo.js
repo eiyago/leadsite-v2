@@ -155,7 +155,7 @@ function proximoFollowup() {
   return null;
 }
 
-/* depois do "oi": se não responder em 25–40 min, manda a apresentação mesmo assim (uma por vez) */
+/* depois do "oi": espera a resposta (aí a apresentação sai em 1–2 min). Sem resposta em ~24h, manda a apresentação uma vez como retomada */
 function pitchPendente() {
   return DB.leads().find((l) => l.etapa === 'oi' && !l.humano && Date.now() >= (l.pitchApos || 0));
 }
@@ -167,7 +167,7 @@ async function abordar(l) {
   try { await enriquecer(l); } catch (e) { log('   (sem fotos extras)', e.message); }
   const msg = F.oi(l);
   const jidReal = await enviar(jid, msg);
-  DB.upsert({ ...l, jid: jidReal, jids: [...new Set([jid, jidReal])], canal: 'whatsapp', etapa: 'oi', fu: 0, abordadoEm: new Date().toISOString(), pitchApos: Date.now() + (25 + Math.random() * 15) * 60e3 });
+  DB.upsert({ ...l, jid: jidReal, jids: [...new Set([jid, jidReal])], canal: 'whatsapp', etapa: 'oi', fu: 0, abordadoEm: new Date().toISOString(), pitchApos: Date.now() + (24 + Math.random() * 2) * 36e5 });
   DB.log(l.id, 'eu', msg);
   log(`👋 Oi enviado: ${l.nome} (${l.temp}, ${l.categoria})`);
   return true;

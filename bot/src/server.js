@@ -20,7 +20,7 @@ if(!j.img){c.innerHTML='<h1>Gerando QR…</h1><p>Aguarde alguns segundos.</p>';}
 else c.innerHTML='<h1>Conecte o chip de vendas</h1><img src="'+j.img+'" alt="QR"><ol><li>No celular do <b>chip de vendas</b>, abra o WhatsApp</li><li>Toque em ⋮ ou Configurações → <b>Aparelhos conectados</b></li><li><b>Conectar um aparelho</b> e aponte para o QR</li></ol><small>O QR muda sozinho a cada ~20s.</small>';}catch(e){}
 setTimeout(t,3000)}t();</script></body></html>`;
 
-const ETAPA = { oi: 'abordado', pitch: 'abordado', valor: 'followup', preco: 'followup', ig_enviado: 'abordado', abordado: 'abordado', followup1: 'abordado', followup2: 'followup', followup3: 'followup', conversando: 'followup', negociando: 'agendado', convertido: 'convertido', optout: 'perdido', perdido: 'perdido' };
+const ETAPA = { oi: 'abordado', pitch: 'abordado', valor: 'followup', preco: 'followup', ig_enviado: 'abordado', ig_oi: 'abordado', ig_pitch: 'abordado', ig_valor: 'followup', ig_preco: 'followup', ig_objecao: 'followup', ig_fu1: 'followup', ig_fu2: 'followup',abordado: 'abordado', followup1: 'abordado', followup2: 'followup', followup3: 'followup', conversando: 'followup', negociando: 'agendado', convertido: 'convertido', optout: 'perdido', perdido: 'perdido' };
 
 function paraApp(l) {
   return {
@@ -70,15 +70,43 @@ export function iniciarServidor() {
     }
     /* fila do Instagram: leads sem celular que têm Instagram (nunca recebem WhatsApp) */
     if (url.pathname === '/instagram') {
-      const t = agoraBR(); const hoje = DB.leads().filter((l) => l.igEm && l.igEm.startsWith(t.data)).length;
+      const t = agoraBR();
+      const dataBR = (iso) => new Date(iso).toLocaleDateString('sv-SE', { timeZone: CFG.fuso });
+      const handle = (l) => (String(l.site || '').match(/instagram\.com\/([^/?#]+)/i) || [])[1] || '';
+      const hoje = DB.leads().filter((l) => (l.igInicio || (l.etapa === 'ig_enviado' && l.igEm)) && dataBR(l.igInicio || l.igEm) === t.data).length;
       const fila = DB.leads().filter((l) => l.etapa === 'ig_fila').sort((a, b) => (b.temp === 'quente') - (a.temp === 'quente') || b.score - a.score)
         .slice(0, 30).map((l) => ({ id: l.id, nome: l.nome, categoria: l.categoria, cidade: l.cidade, temp: l.temp, rating: l.rating, reviews: l.reviews,
-          insta: (l.site.match(/instagram\.com\/([^/?#]+)/i) || [])[1] || '', story: F.insta(l, true), direct: F.insta(l, false) }));
-      return send({ hoje, limite: 20, fila, enviados: DB.leads().filter((l) => l.etapa === 'ig_enviado').length });
+          insta: handle(l), oi: F.igEtapa('oi', l), story: F.insta(l, true), direct: F.insta(l, false) }));
+      /* conversas em andamento: o que está "devido" se o lead NÃO respondeu (se respondeu, quem decide a próxima etapa é a resposta) */
+      const conversas = DB.leads().filter((l) => /^ig_(oi|pitch|valor|preco|objecao|fu1|fu2)$/.test(l.etapa)).map((l) => {
+        const horas = (Date.now() - new Date(l.igEm)) / 36e5; const fu = l.fu || 0;
+        let devido = null;
+        if (l.etapa === 'ig_oi' && horas >= 24) devido = 'pitch';
+        else if (l.etapa !== 'ig_oi' && fu === 0 && horas >= 3 && (dataBR(l.igEm) !== t.data || t.hora < 17)) devido = 'fu1';
+        else if (fu === 1 && horas >= 44) devido = 'fu2';
+        else if (fu >= 2 && horas >= 96) devido = 'perdido';
+        return { id: l.id, nome: l.nome, insta: handle(l), etapa: l.etapa, fu, desde: l.igEm, horas: Math.round(horas * 10) / 10, devido };
+      });
+      return send({ hoje, limite: 20, fila, conversas, enviados: DB.leads().filter((l) => /^ig_(?!fila|pulado)/.test(l.etapa)).length });
     }
     if (req.method === 'POST' && url.pathname.startsWith('/instagram/')) {
       const [, , id, acao] = url.pathname.split('/').map(decodeURIComponent);
       if (!DB.lead(id)) return send({ ok: false, erro: 'lead não encontrado' }, 404);
+      /* etapa do funil no Instagram: devolve o texto da etapa e registra (oi → pitch → valor c/ prévia → preco; objecao; fu1; fu2).
+         ?so=1 só registra a etapa, sem gerar texto */
+      if (acao === 'etapa') {
+        const nome = url.pathname.split('/')[4];
+        if (!['oi', 'pitch', 'valor', 'preco', 'objecao', 'fu1', 'fu2'].includes(nome)) return send({ ok: false, erro: 'etapa inválida' }, 400);
+        const l = DB.lead(id);
+        return (async () => {
+          let link = l.linkPrevia;
+          if ((nome === 'valor' || nome === 'fu1') && !link) { try { await enriquecer(l); } catch { /* sem fotos extras */ } link = await linkPrevia(l); }
+          const texto = url.searchParams.get('so') ? '' : F.igEtapa(nome, l, link);
+          const fu = nome === 'fu1' ? 1 : nome === 'fu2' ? 2 : l.fu || 0;
+          DB.upsert({ ...l, linkPrevia: link, etapa: 'ig_' + nome, canal: 'instagram', igEm: new Date().toISOString(), igInicio: l.igInicio || new Date().toISOString(), fu });
+          send({ ok: true, etapa: 'ig_' + nome, texto, link: link || '' });
+        })().catch((e) => send({ ok: false, erro: e.message }, 500));
+      }
       /* prévia do site (mesmo gerador do app, com a faixa "Prévia por Nexa Digital") + texto pro Direct */
       if (acao === 'previa') {
         const l = DB.lead(id);
@@ -89,8 +117,9 @@ export function iniciarServidor() {
           send({ ok: true, link, texto: F.igPrevia(l, link), fotos: (l.fotos || []).length });
         })().catch((e) => send({ ok: false, erro: e.message }, 500));
       }
-      if (acao === 'enviado') DB.upsert({ id, etapa: 'ig_enviado', canal: 'instagram', igEm: new Date().toISOString() });
+      if (acao === 'enviado') DB.upsert({ id, etapa: 'ig_oi', canal: 'instagram', fu: 0, igEm: new Date().toISOString(), igInicio: DB.lead(id).igInicio || new Date().toISOString() });
       else if (acao === 'pular') DB.upsert({ id, etapa: 'ig_pulado' });
+      else if (acao === 'perdido') DB.upsert({ id, etapa: 'perdido' });
       else if (acao === 'respondeu') DB.upsert({ id, etapa: 'negociando', canal: 'instagram', respondeu: true, respondeuEm: new Date().toISOString() });
       return send({ ok: true });
     }

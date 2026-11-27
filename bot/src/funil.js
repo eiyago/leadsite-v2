@@ -50,6 +50,12 @@ const IG_PREVIA = [
 ];
 export const igPrevia = (l, k) => pick(IG_PREVIA)(l, k);
 
+/* Instagram por etapas, igual ao WhatsApp (uma etapa por vez, esperando a resposta). O Direct não formata *negrito*. */
+export function igEtapa(nome, l, k) {
+  const f = { oi, pitch, valor: (x) => valor(x, k), preco, objecao, fu1: (x) => fu1(x, k), fu2 }[nome];
+  return f ? f(l).replace(/\*/g, '') : '';
+}
+
 /* 4 — preço: R$250, sem mensalidade, ativo em minutos */
 const PRECO = [
   (l) => `O investimento é de ${money(CFG.preco)}, pagamento único, *sem mensalidade*. Um único cliente novo já paga o site.\n\nConfirmando, consigo deixar o site da *${l.nome}* ativo em poucos minutos pra vocês pararem de perder cliente pra concorrência. Pix ou cartão. Vamos ativar?`,
