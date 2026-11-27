@@ -2,7 +2,7 @@
 // Devolve { fotos, avaliacoes, horarios } só com dados reais da página.
 (async () => {
   const dorme = (ms) => new Promise((r) => setTimeout(r, ms));
-  await dorme(3500);
+  await dorme(5000);
   const grande = (u) => u.replace(/=[^=/]*$/, '') + '=w1600-h1100-k-no';
   const fotosDe = () => [...document.images].map((i) => i.currentSrc || i.src)
     .filter((s) => /googleusercontent\.com\/(grass-cs|gps-cs|p\/|geougc)/.test(s)).map(grande);
@@ -12,7 +12,7 @@
     .filter((t) => /^(segunda|terça|quarta|quinta|sexta|sábado|domingo)/i.test(t)).map((t) => t.replace(/^(\S+)\s/, '$1: '));
   // avaliações: abre a aba, ordena por "mais relevantes" (padrão), expande "Mais"
   [...document.querySelectorAll('[role=tab]')].find((t) => /Avalia/.test(t.innerText))?.click();
-  await dorme(3000);
+  await dorme(4000);
   const painel = document.querySelector('div[role=main] div[tabindex="-1"]') || document.querySelector('div[role=main]');
   for (let i = 0; i < 3; i++) { painel?.scrollBy(0, 2500); await dorme(900); }
   document.querySelectorAll('button.w8nwRe, button[aria-label^="Ver mais"]').forEach((b) => b.click());
