@@ -215,3 +215,5 @@ code{background:var(--bg);padding:1px 5px;border-radius:5px;font-size:12px}
 .ig-msgs p{margin:0;font-size:14px;line-height:1.5;white-space:pre-wrap}
 .ig-msgs .btn{align-self:flex-start}
 @media (max-width:700px){.ig-msgs{grid-template-columns:1fr}}
+
+.btn.ok{background:#16a34a;border-color:#16a34a;color:#fff}.btn.ok:hover{background:#15803d}

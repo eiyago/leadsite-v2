@@ -50,6 +50,27 @@ function bindGerar() {
       gerarPreview(); toast(`${l.nome} preenchido${l.fotos?.length ? ` com ${l.fotos.length} fotos reais` : ''}`);
     } catch (e) { toast('Busca: ' + e.message); } finally { b.disabled = false; b.textContent = '🔎 Buscar'; }
   };
+  /* efetivar direto do gerador: cliente pagou → site oficial (sem faixa de prévia), lead vira Convertido */
+  $('#gerarEfetivar').onclick = async () => {
+    if (!f.reportValidity()) return;
+    const l0 = leadDoForm();
+    if (!confirm(`Efetivar o site da ${l0.nome}? Use depois que o cliente pagar: o link sai sem a faixa de prévia.`)) return;
+    const btn = $('#gerarEfetivar'); btn.disabled = true; btn.textContent = 'Efetivando…';
+    try {
+      const lead = S.crm[l0.id] ? Object.assign(S.crm[l0.id], l0) : addToCRM(l0, 'base', true);
+      saveCRM();
+      await efetivar(lead);
+      if (!lead.oficial) throw new Error('não consegui gerar o link oficial');
+      G.lead = lead;
+      const wa = lead.wa ? `https://wa.me/${lead.wa}?text=${encodeURIComponent(`Pronto! O site da ${lead.nome} já está no ar 🚀\n${lead.oficial}`)}` : '';
+      $('#gerarOut').innerHTML = `<div class="gerar-ok"><b>✅ Site efetivado (oficial, sem faixa de prévia)</b><input readonly value="${esc(lead.oficial)}" onclick="this.select()">
+        <div class="row actions"><button type="button" class="btn primary" id="gCopiarOf">Copiar link oficial</button><a class="btn" href="${esc(lead.oficial)}" target="_blank" rel="noopener">Abrir</a>
+        ${wa ? `<a class="btn" href="${esc(wa)}" target="_blank" rel="noopener">Mandar no WhatsApp</a>` : ''}
+        <button type="button" class="btn" id="gCRMOf">Abrir no CRM</button></div></div>`;
+      $('#gCopiarOf').onclick = () => copy(lead.oficial);
+      $('#gCRMOf').onclick = () => { S.drawer.tab = 'site'; openDrawer(lead.id); };
+    } catch (err) { toast('Erro: ' + err.message); } finally { btn.disabled = false; btn.textContent = '✅ Efetivar site'; }
+  };
   f.addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = $('#gerarBtn'); btn.disabled = true; btn.textContent = 'Gerando…';

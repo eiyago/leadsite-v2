@@ -202,7 +202,12 @@ async function syncRobo(silencioso) {
         S.crm[b.id] = { ...rest, ...extra, why: [], stage, notas: [], hist: [{ stage, at: LV.now() }], createdAt: b.abordadoEm || LV.now(), lastContact: b.abordadoEm, valor: S.cfg.preco, mensal: S.cfg.mensalidade, robo: true };
         novos++;
       } else {
-        Object.assign(cur, extra, { fotos: cur.fotos || b.fotos, avaliacoes: cur.avaliacoes || b.avaliacoes, horarios: cur.horarios || b.horarios, robo: true });
+        // banco de mídia do robô (logo, fotos reais, avaliações escritas, preços) tem prioridade sobre o que estava vazio no app
+        const tem = (a) => Array.isArray(a) && a.length;
+        Object.assign(cur, extra, {
+          fotos: tem(b.fotos) ? b.fotos : cur.fotos, avaliacoes: tem(b.avaliacoes) ? b.avaliacoes : cur.avaliacoes, horarios: cur.horarios || b.horarios,
+          resumo: cur.resumo || b.resumo, sx: { ...(b.sx || {}), ...(cur.sx || {}) }, robo: true,
+        });
         if (!['convertido', 'perdido'].includes(cur.stage) && ordem.indexOf(b.stage) > ordem.indexOf(cur.stage)) { setStage(cur.id, b.stage); atual++; }
         if (b.stage === 'perdido' && cur.stage !== 'perdido' && cur.stage !== 'convertido') { setStage(cur.id, 'perdido'); atual++; }
       }

@@ -1,14 +1,21 @@
 'use strict';
 /* LeadSite V2 — conteúdo por nicho: textos, paletas, fontes e fotos (Unsplash validadas) */
 var LS_FONTS = [
-  { d: 'Archivo Black', b: 'Inter', q: 'family=Archivo+Black&family=Inter:wght@400;500;600;700', up: 1, w: 400, ls: '-.01em', lh: .95 },
-  { d: 'Bebas Neue', b: 'Manrope', q: 'family=Bebas+Neue&family=Manrope:wght@400;500;600;700', up: 1, w: 400, ls: '.01em', lh: .9, sc: 1.22 },
+  { d: 'Archivo Black', cw: .74, b: 'Inter', q: 'family=Archivo+Black&family=Inter:wght@400;500;600;700', up: 1, w: 400, ls: '-.01em', lh: .95 },
+  { d: 'Bebas Neue', cw: .42, b: 'Manrope', q: 'family=Bebas+Neue&family=Manrope:wght@400;500;600;700', up: 1, w: 400, ls: '.01em', lh: .9, sc: 1.22 },
   { d: 'Playfair Display', b: 'Inter', q: 'family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=Inter:wght@400;500;600', up: 0, w: 700, ls: '-.02em', lh: 1.02 },
   { d: 'Syne', b: 'DM Sans', q: 'family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;700', up: 0, w: 800, ls: '-.03em', lh: .98 },
   { d: 'Fraunces', b: 'Outfit', q: 'family=Fraunces:ital,opsz,wght@0,9..144,600;1,9..144,500&family=Outfit:wght@300;400;500;600', up: 0, w: 600, ls: '-.02em', lh: 1 },
   { d: 'Space Grotesk', b: 'Inter', q: 'family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600', up: 0, w: 700, ls: '-.035em', lh: .98 },
   { d: 'Cormorant Garamond', b: 'Montserrat', q: 'family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Montserrat:wght@400;500;600', up: 0, w: 600, ls: '-.01em', lh: 1, sc: 1.12 },
-  { d: 'Unbounded', b: 'Manrope', q: 'family=Unbounded:wght@600;800&family=Manrope:wght@400;500;600;700', up: 0, w: 800, ls: '-.03em', lh: 1.02, sc: .9 },
+  { d: 'Unbounded', cw: .82, b: 'Manrope', q: 'family=Unbounded:wght@600;800&family=Manrope:wght@400;500;600;700', up: 0, w: 800, ls: '-.03em', lh: 1.02, sc: .9 },
+  /* 8–13: fontes das direções novas (brutalista, luxo, retrô, suíço, noturno) */
+  { d: 'Anton', cw: .5, b: 'Inter Tight', q: 'family=Anton&family=Inter+Tight:wght@400;500;600;700', up: 1, w: 400, ls: '0', lh: .92, sc: 1.08 },
+  { d: 'DM Serif Display', b: 'Jost', q: 'family=DM+Serif+Display:ital@0;1&family=Jost:wght@300;400;500;600', up: 0, w: 400, ls: '-.015em', lh: 1.02 },
+  { d: 'Italiana', b: 'Jost', q: 'family=Italiana&family=Jost:wght@300;400;500;600', up: 1, w: 400, ls: '.04em', lh: 1.04, sc: 1.05 },
+  { d: 'Alfa Slab One', b: 'Work Sans', q: 'family=Alfa+Slab+One&family=Work+Sans:wght@400;500;600;700', up: 0, w: 400, ls: '-.01em', lh: 1, sc: .92 },
+  { d: 'Instrument Serif', b: 'Inter', q: 'family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600', up: 0, w: 400, ls: '-.025em', lh: .98, sc: 1.12 },
+  { d: 'Big Shoulders Display', cw: .46, b: 'Inter', q: 'family=Big+Shoulders+Display:wght@700;900&family=Inter:wght@400;500;600', up: 1, w: 900, ls: '.005em', lh: .9, sc: 1.15 },
 ];
 
 var LS_NICHES = {

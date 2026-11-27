@@ -27,7 +27,7 @@ function paraApp(l) {
   return {
     id: l.id, nome: l.nome, categoria: l.categoria, cidade: l.cidade, telefone: l.telefone, telDigits: l.telDigits, wa: l.wa, mobile: l.mobile,
     endereco: l.endereco, rating: l.rating, reviews: l.reviews, site: l.site, siteTipo: l.siteTipo, maps: l.maps, score: l.score, temp: l.temp,
-    fotos: l.fotos, avaliacoes: l.avaliacoes, horarios: l.horarios, resumoGoogle: l.resumo,
+    fotos: l.fotos, avaliacoes: l.avaliacoes, horarios: l.horarios, resumoGoogle: l.resumo, resumo: l.resumo, sx: l.sx, midiaEm: l.midiaEm,
     stage: ETAPA[l.etapa], etapaRobo: l.etapa, resumoRobo: l.resumo || '', humano: !!l.humano,
     abordadoEm: l.abordadoEm, respondeuEm: l.respondeuEm, linkPrevia: l.linkPrevia,
     conversa: (l.conversa || []).slice(-12),
@@ -128,7 +128,9 @@ export function iniciarServidor() {
     if (url.pathname === '/coletar') {
       const handle = (l) => (String(l.site || '').match(/instagram\.com\/([^/?#]+)/i) || [])[1] || l.sx?.ig || '';
       const sem = (l) => !l.midiaEm;
-      const conv = DB.leads().filter((l) => sem(l) && /^(oi|pitch|ig_oi|ig_pitch)$/.test(l.etapa));
+      // prioridade: quem está pra fechar → quem já viu prévia → conversas em andamento → filas
+      const peso = { negociando: 0, preco: 1, ig_preco: 1, valor: 2, ig_valor: 2, abordado: 3, followup1: 3, followup2: 3, oi: 4, pitch: 4, ig_oi: 4, ig_pitch: 4 };
+      const conv = DB.leads().filter((l) => sem(l) && peso[l.etapa] != null).sort((a, b) => peso[a.etapa] - peso[b.etapa]).slice(0, 12);
       const ig = DB.leads().filter((l) => sem(l) && l.etapa === 'ig_fila').sort((a, b) => b.score - a.score).slice(0, 3);
       const wa = DB.leads().filter((l) => sem(l) && l.etapa === 'fila').sort((a, b) => (b.temp === 'quente') - (a.temp === 'quente') || b.score - a.score).slice(0, 3);
       return send([...conv, ...ig, ...wa].map((l) => ({ id: l.id, nome: l.nome, categoria: l.categoria, insta: handle(l), maps: `https://www.google.com/maps/place/?q=place_id:${l.id}&hl=pt-BR`, etapa: l.etapa })));
