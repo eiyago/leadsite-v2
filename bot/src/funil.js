@@ -7,7 +7,7 @@ import { CFG } from './config.js';
 const pick = (a) => a[Math.floor(Math.random() * a.length)];
 const money = (v) => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0 });
 const nome1 = () => String(CFG.meuNome || 'Yago').split(' ')[0];
-const emp = () => CFG.empresa || 'Nexa Digital';
+const emp = () => CFG.empresa || 'Nexo Digital';
 const cat = (l) => String(l.categoria || 'negócio local').toLowerCase();
 const cid = (l) => String(l.cidade || '').split(',')[0] || 'aqui na cidade';
 const saud = () => { const h = Number(new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', hour: 'numeric', hour12: false }).format(new Date())); return h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite'; };

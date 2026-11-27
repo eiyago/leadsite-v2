@@ -271,27 +271,61 @@ const JV = (() => {
     return out.map((p) => p.trim()).filter(Boolean);
   }
 
+  /* Voz premium (a do JARVIS do filme): ElevenLabs através do cérebro local (Y:\jarvis-ironman, POST /tts).
+     A chave fica só no computador; o site nunca vê. Sem cérebro ou sem chave, usa a voz do navegador. */
+  const CEREBRO_HTTP = 'http://localhost:8787';
+  let premiumCache = { ok: false, t: 0 };
+  async function temVozPremium() {
+    if (Date.now() - premiumCache.t < 60e3) return premiumCache.ok;
+    const ok = await fetch(CEREBRO_HTTP + '/health', { cache: 'no-store' }).then((r) => r.json()).then((j) => !!j.tts).catch(() => false);
+    premiumCache = { ok, t: Date.now() }; return ok;
+  }
+  function audioPremium(texto) {
+    const p = fetch(CEREBRO_HTTP + '/tts', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ text: texto }) })
+      .then((r) => { if (!r.ok) throw new Error('tts ' + r.status); return r.blob(); });
+    p.catch(() => {}); return p;
+  }
+  let audioAtual = null;
+
   let filaFala = Promise.resolve();
   let geracao = 0; // "parar" invalida tudo o que estava na fila, inclusive os próximos trechos
-  function parar() { geracao++; if ('speechSynthesis' in window) speechSynthesis.cancel(); setEstado('ocioso'); }
+  function parar() { geracao++; if (audioAtual) { try { audioAtual.pause(); } catch { /* ok */ } audioAtual = null; } if ('speechSynthesis' in window) speechSynthesis.cancel(); setEstado('ocioso'); }
   async function falar(texto, { forcar } = {}) {
     const c = cfg();
     emit('fala', texto);
-    if (!texto || (c.mudo && !forcar) || !('speechSynthesis' in window)) return false;
-    const voz = await vozEscolhida();
+    if (!texto || (c.mudo && !forcar)) return false;
+    const premium = c.vozPremium !== false && await temVozPremium();
+    if (!premium && !('speechSynthesis' in window)) return false;
+    const voz = await vozEscolhida(); // reserva, se a voz premium falhar no meio
     const frases = pedacos(texto);
     const minha = geracao;
     filaFala = filaFala.then(() => new Promise((res) => {
       let i = 0;
-      const prox = () => {
-        if (minha !== geracao) return res(false);
-        if (i >= frases.length) { setEstado('ocioso'); return res(true); }
-        const u = new SpeechSynthesisUtterance(frases[i++].trim());
-        if (voz) u.voice = voz; u.lang = voz?.lang || 'pt-BR';
+      let proxAudio = premium && frases.length ? audioPremium(frases[0]) : null;
+      const sistema = (frase) => {
+        if (!('speechSynthesis' in window)) return prox();
+        const u = new SpeechSynthesisUtterance(frase);
+        const v = voz; if (v) u.voice = v; u.lang = v?.lang || 'pt-BR';
         u.rate = c.rate; u.pitch = c.pitch; u.volume = c.volume;
         u.onstart = () => setEstado('falando');
         u.onend = prox; u.onerror = () => { setEstado('ocioso'); res(false); };
         speechSynthesis.speak(u);
+      };
+      const prox = () => {
+        if (minha !== geracao) return res(false);
+        if (i >= frases.length) { audioAtual = null; setEstado('ocioso'); return res(true); }
+        const frase = frases[i++].trim();
+        if (!premium) return sistema(frase);
+        // já pede o próximo trecho enquanto este toca: sem pausa entre frases
+        const atual = proxAudio; proxAudio = i < frases.length ? audioPremium(frases[i]) : null;
+        atual.then((b) => {
+          if (minha !== geracao) return res(false);
+          const a = new Audio(URL.createObjectURL(b)); a.volume = c.volume; audioAtual = a;
+          a.onplay = () => setEstado('falando');
+          a.onended = () => { URL.revokeObjectURL(a.src); prox(); };
+          a.onerror = () => sistema(frase);
+          a.play().catch(() => sistema(frase));
+        }).catch(() => { premiumCache.t = 0; sistema(frase); });
       };
       prox();
     }));

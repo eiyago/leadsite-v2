@@ -107,7 +107,7 @@ export function iniciarServidor() {
           send({ ok: true, etapa: 'ig_' + nome, texto, link: link || '' });
         })().catch((e) => send({ ok: false, erro: e.message }, 500));
       }
-      /* prévia do site (mesmo gerador do app, com a faixa "Prévia por Nexa Digital") + texto pro Direct */
+      /* prévia do site (mesmo gerador do app, com a faixa "Prévia por Nexo Digital") + texto pro Direct */
       if (acao === 'previa') {
         const l = DB.lead(id);
         return (async () => {
