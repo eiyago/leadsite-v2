@@ -99,7 +99,7 @@ var LSite = (function () {
     return best;
   }
   var NICHE_DIRS = {
-    barbearia: ['urbano', 'editorial', 'noturno', 'brutal', 'luxo', 'retro'], salao: ['editorial', 'acolhedor', 'luxo', 'suico', 'retro'],
+    barbearia: ['urbano', 'editorial', 'noturno', 'brutal', 'luxo', 'retro'], unhas: ['luxo', 'acolhedor', 'retro', 'clean', 'suico'], salao: ['editorial', 'acolhedor', 'luxo', 'suico', 'retro'],
     estetica: ['editorial', 'clean', 'acolhedor', 'luxo', 'suico'], hamburgueria: ['urbano', 'acolhedor', 'noturno', 'brutal', 'retro'],
     pizzaria: ['urbano', 'acolhedor', 'editorial', 'retro', 'noturno'], cafe: ['acolhedor', 'editorial', 'retro', 'suico'],
     restaurante: ['editorial', 'acolhedor', 'urbano', 'luxo', 'retro'], academia: ['urbano', 'clean', 'noturno', 'brutal'],

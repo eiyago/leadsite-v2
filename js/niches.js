@@ -34,6 +34,21 @@ var LS_NICHES = {
     fonts: [0, 1, 7, 5],
     img: ['1503951914875-452162b0f3f1', '1585747860715-2ba37e788b70', '1621605815971-fbc98d665033', '1599351431202-1e0f0137899a', '1622286342621-4bd786c2447c', '1512690459411-b9245aed614b', '1605497788044-5a32c7078486', '1593702288056-7927b442d0fa'],
   },
+  unhas: {
+    re: /unha|manicure|nail|esmalt|pedicure|alongamento/i, svcT: 'Serviços', cta: 'Agendar no WhatsApp', short: 'Agendar', wa: 'Olá! Vim pelo site e quero agendar um horário para as unhas.',
+    kick: ['Nail design em {ci}', 'Unhas · {ci}', 'Cuidado nos detalhes'],
+    heads: ['Unhas impecáveis, do seu jeito', 'Capricho em cada detalhe', 'Suas mãos merecem esse cuidado', 'Beleza que começa nas mãos'],
+    subs: ['Esmaltação, alongamento e nail art com técnica, higiene e hora marcada pelo WhatsApp.', 'Um espaço acolhedor para você relaxar e sair com unhas perfeitas.', 'Durabilidade, acabamento e carinho em cada atendimento.'],
+    svc: [['Esmaltação em gel', 'Brilho e durabilidade por semanas.'], ['Alongamento', 'Fibra ou gel, com formato pensado para você.'], ['Manicure e pedicure', 'Cuidado completo para mãos e pés.'], ['Nail art', 'Decorações do jeito que você imaginar.'], ['Manutenção', 'Unhas sempre alinhadas e bonitas.'], ['Spa das mãos', 'Hidratação e cuidado com a pele.']],
+    perks: [['Materiais esterilizados', 'Higiene em primeiro lugar.'], ['Acabamento caprichado', 'Detalhe que faz diferença.'], ['Ambiente acolhedor', 'Seu momento de pausa.'], ['Hora marcada', 'Sem espera, no seu tempo.'], ['Agenda pelo WhatsApp', 'Rápido e sem complicação.'], ['Durabilidade', 'Unhas bonitas por mais tempo.']],
+    about: ['A {n} nasceu para cuidar das suas unhas com técnica e carinho. Cada atendimento começa ouvindo o que você deseja e termina com um resultado impecável.', 'Aqui você encontra higiene, produtos de qualidade e um ambiente pensado para você relaxar.'],
+    aboutT: ['Detalhe é tudo', 'Feito com capricho', 'Cuidado que aparece'],
+    marq: ['Esmaltação em gel', 'Alongamento', 'Nail art', 'Manicure', 'Pedicure', 'Manutenção'],
+    ctaT: ['Reserve seu horário', 'Pronta para unhas impecáveis?', 'Seu horário te espera'],
+    pal: [{ bg: '#fbf5f6', fg: '#2a1c20', ac: '#c2477a' }, { bg: '#f7f2ec', fg: '#221b16', ac: '#b0815a' }, { bg: '#140f12', fg: '#f7ecef', ac: '#e89ab8' }],
+    fonts: [2, 4, 6],
+    img: ['1604654894610-df63bc536371', '1560066984-138dadb4c035', '1522337360788-8b13dee7a37e', '1559599101-f09722fb4948', '1562322140-8baeececf3df', '1595476108010-b4d1f102b1b1'],
+  },
   salao: {
     re: /sal[aã]o|cabel|beleza|unha|manicure|nail|escova|hair|mega hair|tran[cç]/i, svcT: 'Serviços', cta: 'Agendar no WhatsApp', short: 'Agendar', wa: 'Olá! Vim pelo site e quero agendar um horário.',
     kick: ['Beleza em {ci}', 'Salão de beleza · {ci}', 'Cuidado e autoestima'],
@@ -260,4 +275,4 @@ var LS_NICHES = {
     img: ['1497366811353-6870744d04b2', '1521737604893-d14cc237f11d', '1556761175-5973dc0f32e7', '1600880292203-757bb62b4baf', '1513694203232-719a280e022f'],
   },
 };
-var LS_NICHE_ORDER = ['barbearia', 'oficina', 'estetica', 'salao', 'pizzaria', 'hamburgueria', 'cafe', 'restaurante', 'academia', 'pet', 'odonto', 'clinica', 'oficina', 'escritorio', 'imobiliaria', 'obras', 'generico'];
+var LS_NICHE_ORDER = ['barbearia', 'oficina', 'estetica', 'unhas', 'salao', 'pizzaria', 'hamburgueria', 'cafe', 'restaurante', 'academia', 'pet', 'odonto', 'clinica', 'oficina', 'escritorio', 'imobiliaria', 'obras', 'generico'];
