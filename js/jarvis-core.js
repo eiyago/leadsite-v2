@@ -245,18 +245,30 @@ const JV = (() => {
     setTimeout(() => res(vozes), 1500);
   });
   const generoDa = (v) => (MASC.test(v.name) ? 'masc' : FEM.test(v.name) ? 'fem' : '?');
+  /* vozes neurais (Edge: "Antonio Online (Natural)", Francisca, Thalita…) soam humanas; as locais do Windows (Daniel, Maria) soam robóticas */
+  const natural = (v) => /natural|neural/i.test(v.name);
+  const nota = (v, genero) => (natural(v) ? 100 : 0) + (/BR/i.test(v.lang) ? 20 : 0) + (generoDa(v) === genero ? 10 : 0) + (!v.localService ? 5 : 0) + (/google/i.test(v.name) ? 3 : 0);
   async function listaVozes() {
     await carregarVozes();
-    return vozes.filter((v) => /^pt/i.test(v.lang)).map((v) => ({ uri: v.voiceURI, nome: v.name, lang: v.lang, genero: generoDa(v), online: !v.localService }));
+    const c = cfg();
+    return vozes.filter((v) => /^pt/i.test(v.lang)).sort((a, b) => nota(b, c.genero) - nota(a, c.genero))
+      .map((v) => ({ uri: v.voiceURI, nome: v.name, lang: v.lang, genero: generoDa(v), online: !v.localService, natural: natural(v) }));
   }
   async function vozEscolhida() {
     await carregarVozes();
     const c = cfg();
-    const pt = vozes.filter((v) => /^pt/i.test(v.lang));
-    const br = pt.filter((v) => /BR/i.test(v.lang));
-    return vozes.find((v) => v.voiceURI === c.vozURI)
-      || br.find((v) => generoDa(v) === c.genero && /natural|online/i.test(v.name))
-      || br.find((v) => generoDa(v) === c.genero) || br[0] || pt[0] || null;
+    const pt = vozes.filter((v) => /^pt/i.test(v.lang)).sort((a, b) => nota(b, c.genero) - nota(a, c.genero));
+    const salva = vozes.find((v) => v.voiceURI === c.vozURI);
+    // voz escolhida à mão só vale se não for robótica quando existe uma natural disponível
+    if (salva && (natural(salva) || !pt.some(natural))) return salva;
+    return pt[0] || null;
+  }
+  /* pedaços maiores (até ~220 letras) em vez de frase por frase: a entonação flui sem aquelas pausas de robô */
+  function pedacos(texto) {
+    const frases = String(texto).replace(/\s+/g, ' ').trim().match(/[^.!?…]+[.!?…]*\s*/g) || [texto];
+    const out = [];
+    for (const f of frases) { const ult = out.length - 1; if (ult >= 0 && (out[ult] + f).length <= 220) out[ult] += f; else out.push(f); }
+    return out.map((p) => p.trim()).filter(Boolean);
   }
 
   let filaFala = Promise.resolve();
@@ -266,7 +278,7 @@ const JV = (() => {
     emit('fala', texto);
     if (!texto || (c.mudo && !forcar) || !('speechSynthesis' in window)) return false;
     const voz = await vozEscolhida();
-    const frases = String(texto).replace(/\s+/g, ' ').match(/[^.!?]+[.!?]*/g) || [texto];
+    const frases = pedacos(texto);
     filaFala = filaFala.then(() => new Promise((res) => {
       let i = 0;
       const prox = () => {

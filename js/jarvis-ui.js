@@ -209,7 +209,7 @@ const JVUI = (() => {
         <label class="jv-sw"><input type="checkbox" data-c="mudo" ${c.mudo ? 'checked' : ''}><span></span> Silenciar toda a voz</label>
         <div class="jv-row">
           <label>Voz<select data-c="genero"><option value="masc" ${c.genero === 'masc' ? 'selected' : ''}>Masculina</option><option value="fem" ${c.genero === 'fem' ? 'selected' : ''}>Feminina</option></select></label>
-          <label>Escolher voz<select data-c="vozURI"><option value="">Automática (${atual ? esc(atual.name) : 'nenhuma voz pt'})</option>${vozes.map((v) => `<option value="${esc(v.uri)}" ${c.vozURI === v.uri ? 'selected' : ''}>${esc(v.nome)} · ${G[v.genero]}${v.online ? ' · online' : ''}</option>`).join('')}</select></label>
+          <label>Escolher voz<select data-c="vozURI"><option value="">Automática (${atual ? esc(atual.name) : 'nenhuma voz pt'})</option>${vozes.map((v) => `<option value="${esc(v.uri)}" ${c.vozURI === v.uri ? 'selected' : ''}>${esc(v.nome)} · ${G[v.genero]}${v.natural ? ' · ✨ natural' : v.online ? ' · online' : ' · robótica'}</option>`).join('')}</select></label>
         </div>
         ${vozes.some((v) => v.genero === 'masc') ? '' : '<p class="jv-dim">Este navegador não tem voz masculina em português. No Microsoft Edge aparecem vozes naturais masculinas (ex.: Antonio).</p>'}
         <div class="jv-row">
