@@ -336,7 +336,7 @@ async function comando(c, original = c) {
   if (c.startsWith('/retomar')) { DB.setMeta('pausado', false); DB.setMeta('retomarEm', null); return avisar('▶️ Robô retomado.'); }
   if (c.startsWith('/status')) {
     const all = DB.leads(); const n = (e) => all.filter((l) => l.etapa === e).length;
-    return avisar(`📊 *Robô LeadSite*\n📍 Campanha: ${cidadeAtual()}\nHoje: ${DB.enviadosHoje(t.data)}/${cotaHoje()} mensagens (${CFG.minPorHora}–${CFG.maxPorHora} por hora)\nNa fila: ${n('fila')}\nAbordados: ${all.filter((l) => l.abordadoEm).length}\nResponderam: ${all.filter((l) => l.respondeu).length}\nConversando: ${n('conversando')}\nProntos p/ fechar: ${n('negociando')}\nSem interesse: ${n('optout')}\n${DB.meta.pausado ? '⏸️ PAUSADO' : '▶️ rodando'}`);
+    return avisar(`📊 *Robô LeadSite*\n📍 Campanha: ${cidadeAtual()}\nHoje: ${DB.enviadosHoje(t.data)}/${cotaHoje()} mensagens (1 a cada ~${Math.round(60 / CFG.maxPorHora)}–${Math.round(60 / CFG.minPorHora)} min)\nNa fila: ${n('fila')}\nAbordados: ${all.filter((l) => l.abordadoEm).length}\nResponderam: ${all.filter((l) => l.respondeu).length}\nConversando: ${n('conversando')}\nProntos p/ fechar: ${n('negociando')}\nSem interesse: ${n('optout')}\n${DB.meta.pausado ? '⏸️ PAUSADO' : '▶️ rodando'}`);
   }
   if (c.startsWith('/teste')) return teste();
   if (c.startsWith('/cidade')) {
@@ -441,7 +441,7 @@ async function tick() {
     DB.setMeta('pausado', false); DB.setMeta('retomarEm', null); DB.setMeta('excecaoHoje', null);
     DB.setMeta('inicio', new Date().toISOString()); // recomeça a rampa de aquecimento
     log('▶️  Pausa programada terminou: retomando com aquecimento do chip');
-    if (conectado()) avisar(`▶️ Voltei! Retomando com ritmo leve (${CFG.minPorHora}–${CFG.maxPorHora} por hora, cota ${cotaHoje()} hoje) para reaquecer o chip.`);
+    if (conectado()) avisar(`▶️ Voltei! Retomando com ritmo leve (1 a cada ~${Math.round(60 / CFG.maxPorHora)}–${Math.round(60 / CFG.minPorHora)} min, cota ${cotaHoje()} hoje) para reaquecer o chip.`);
   }
   // WhatsApp parado: leads da fila do WhatsApp que têm Instagram passam a ser do Instagram (nunca os dois)
   if (DB.meta.pausado || !conectado()) {

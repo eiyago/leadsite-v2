@@ -5,6 +5,8 @@ import { DB } from './db.js';
 import QRCode from 'qrcode';
 import { conectado, qrAtual } from './wa.js';
 import * as F from './funil.js';
+import { enriquecer } from './places.js';
+import { linkPrevia } from './site-link.js';
 import { cotaHoje, teste, abordarAgora, leadManual, cidadeAtual } from './robo.js';
 
 const PAGINA_QR = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Conectar WhatsApp — Robô LeadSite</title>
@@ -77,6 +79,16 @@ export function iniciarServidor() {
     if (req.method === 'POST' && url.pathname.startsWith('/instagram/')) {
       const [, , id, acao] = url.pathname.split('/').map(decodeURIComponent);
       if (!DB.lead(id)) return send({ ok: false, erro: 'lead não encontrado' }, 404);
+      /* prévia do site (mesmo gerador do app, com a faixa "Prévia por Nexa Digital") + texto pro Direct */
+      if (acao === 'previa') {
+        const l = DB.lead(id);
+        return (async () => {
+          if (!l.linkPrevia) { try { await enriquecer(l); } catch { /* sem fotos extras */ } }
+          const link = await linkPrevia(l);
+          DB.upsert({ ...l, linkPrevia: link });
+          send({ ok: true, link, texto: F.igPrevia(l, link), fotos: (l.fotos || []).length });
+        })().catch((e) => send({ ok: false, erro: e.message }, 500));
+      }
       if (acao === 'enviado') DB.upsert({ id, etapa: 'ig_enviado', canal: 'instagram', igEm: new Date().toISOString() });
       else if (acao === 'pular') DB.upsert({ id, etapa: 'ig_pulado' });
       else if (acao === 'respondeu') DB.upsert({ id, etapa: 'negociando', canal: 'instagram', respondeu: true, respondeuEm: new Date().toISOString() });

@@ -41,6 +41,15 @@ const VALOR = [
 ];
 export const valor = (l, k) => pick(VALOR)(l, k);
 
+/* Instagram: logo depois da apresentação, já mandando a prévia (sem asterisco, o Direct não formata) */
+const IG_PREVIA = [
+  (l, k) => `Inclusive já montei uma prévia de como ficaria o site da ${l.nome} 👇\n${k}\n\nDá uma olhada com calma e me diz o que achou?`,
+  (l, k) => `Pra você visualizar, preparei o site de vocês com serviços, localização e WhatsApp num clique 👇\n${k}\n\nO que achou?`,
+  (l, k) => `Fiz uma prévia do site da ${l.nome} pra você ver como ficaria 👇\n${k}\n\nSe curtir, deixo no ar em poucos minutos. Me conta o que achou!`,
+  (l, k) => `Olha como ficaria a ${l.nome} com site próprio 👇\n${k}\n\nQuem pesquisa ${cat(l)} em ${cid(l)} já encontra vocês e chama direto no WhatsApp. Curtiu?`,
+];
+export const igPrevia = (l, k) => pick(IG_PREVIA)(l, k);
+
 /* 4 — preço: R$250, sem mensalidade, ativo em minutos */
 const PRECO = [
   (l) => `O investimento é de ${money(CFG.preco)}, pagamento único, *sem mensalidade*. Um único cliente novo já paga o site.\n\nConfirmando, consigo deixar o site da *${l.nome}* ativo em poucos minutos pra vocês pararem de perder cliente pra concorrência. Pix ou cartão. Vamos ativar?`,
