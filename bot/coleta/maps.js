@@ -1,5 +1,6 @@
 // Coleta no Google Maps (rodar com javascript_tool na página do lugar: https://www.google.com/maps/place/?q=place_id:<id>&hl=pt-BR)
 // Devolve { fotos, avaliacoes, horarios } só com dados reais da página.
+// IMPORTANTE: a aba do Maps precisa estar em primeiro plano (tabs_select) — em segundo plano o painel não carrega e volta vazio.
 (async () => {
   const dorme = (ms) => new Promise((r) => setTimeout(r, ms));
   await dorme(5000);
