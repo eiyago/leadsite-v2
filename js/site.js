@@ -497,7 +497,6 @@ var LSite = (function () {
       '@media(max-width:760px){.igf-g{grid-template-columns:repeat(3,1fr)!important}}</style>' +
       '<noscript><style>[data-r]{opacity:1!important;transform:none!important;clip-path:none!important}.w{transform:none!important}</style></noscript>' +
       '<script type="application/ld+json">' + JSON.stringify(ld).replace(/</g, '\\u003c') + '</script></head><body>' + body +
-      '<script>window.LSS=' + JSON.stringify(P.stock.slice(0, 8)) + ';window.LSO=' + (d.ac ? 0 : 1) + '</script>' +
       '<script>(' + boot.toString() + ')()</script></body></html>';
   }
 
@@ -505,14 +504,14 @@ var LSite = (function () {
   function boot() {
     var q = function (s) { return Array.prototype.slice.call(document.querySelectorAll(s)); };
     /* foto real ainda não publicada (ou fora do ar): troca por uma do banco, sem buraco no layout */
-    var reserva = (window.LSS || []).slice(), ri = 0;
+    var reserva = []; try { reserva = JSON.parse(document.body.getAttribute('data-lss') || '[]'); } catch (e) { /* sem reserva */ } var ri = 0;
     q('img').forEach(function (im) {
       if (im.closest('.mono') || im.closest('.seal')) return;
       im.addEventListener('error', function () { if (!im.dataset.rv && reserva.length) { im.dataset.rv = 1; im.src = reserva[ri++ % reserva.length]; } });
     });
     /* cor da marca: tira a cor dominante do logo real e usa como destaque do site (só logo do mesmo endereço) */
     (function () {
-      var lg = document.querySelector('.mono img'); if (!lg || !window.LSO) return;
+      var lg = document.querySelector('.mono img'); if (!lg || !document.body.hasAttribute('data-lso')) return;
       var usa = function () {
         try {
           var c = document.createElement('canvas'), s = 48; c.width = c.height = s; var x = c.getContext('2d');
