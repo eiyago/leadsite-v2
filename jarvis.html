@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>J.A.R.V.I.S.</title>
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#05070c">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" href="img/jarvis-192.png">
+  <link rel="apple-touch-icon" href="img/jarvis-192.png">
+  <link rel="stylesheet" href="css/jarvis.css">
+  <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
+  <style>
+    html,body{margin:0;background:#05070c}
+    .app-bar{position:fixed;right:14px;bottom:14px;display:flex;gap:8px;z-index:20}
+    .app-bar a,.app-bar button{font:13px system-ui,sans-serif;color:#cbd5e1;background:rgba(15,23,42,.85);border:1px solid rgba(56,189,248,.2);border-radius:10px;padding:8px 12px;text-decoration:none;cursor:pointer}
+    .app-bar a:hover,.app-bar button:hover{border-color:rgba(56,189,248,.5)}
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <div class="app-bar">
+    <button id="btnInstalar" hidden>⬇ Instalar app</button>
+    <a href="jarvis-app-windows.zip" download title="Atalho na área de trabalho + “ok Jarvis” no Windows">🪟 App para Windows</a>
+    <a href="index.html#/inicio" target="_blank" rel="noopener">Lead Site V2 ↗</a>
+  </div>
+  <script src="js/jarvis-core.js"></script>
+  <script src="js/jarvis-ui.js"></script>
+  <script>
+    JVUI.montar(document.getElementById('app'), { modo: 'app' });
+    // instalar como aplicativo (Chrome/Edge)
+    let evtInstalar = null;
+    window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); evtInstalar = e; document.getElementById('btnInstalar').hidden = false; });
+    document.getElementById('btnInstalar').onclick = async () => { if (!evtInstalar) return; evtInstalar.prompt(); await evtInstalar.userChoice; evtInstalar = null; document.getElementById('btnInstalar').hidden = true; };
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+    // aberto pelo "ok Jarvis" do Windows (?ouvir=1): já começa ouvindo
+    if (new URLSearchParams(location.search).get('ouvir') === '1') setTimeout(() => JVUI.ouvir(), 1200);
+  </script>
+</body>
+</html>

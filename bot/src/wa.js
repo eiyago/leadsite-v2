@@ -66,7 +66,13 @@ export async function iniciar() {
     if (connection === 'close') {
       pronto = false;
       const code = lastDisconnect?.error?.output?.statusCode;
-      if (code === DisconnectReason.loggedOut) { console.log('⚠️ Sessão encerrada no celular. Apague a pasta "auth" e rode de novo para escanear o QR.'); return; }
+      if (code === DisconnectReason.loggedOut) {
+        // sessão derrubada (ex.: restrição do WhatsApp): guarda a antiga e gera um QR novo em http://localhost:3210/qr
+        console.log('⚠️ Sessão encerrada no celular. Gerando QR novo em http://localhost:3210/qr');
+        try { fs.renameSync('auth', `auth-antiga-${Date.now()}`); } catch { /* ok */ }
+        setTimeout(iniciar, 3000);
+        return;
+      }
       console.log('🔄 Reconectando…'); setTimeout(iniciar, 5000);
     }
   });

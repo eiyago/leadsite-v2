@@ -36,8 +36,9 @@ function renderKpis() {
   const receita = ganhos.reduce((a, l) => a + Number(l.valor || S.cfg.preco || 0), 0);
   const mrr = ganhos.reduce((a, l) => a + Number(l.mensal ?? S.cfg.mensalidade ?? 0), 0);
   const conv = abord ? Math.round((ganhos.length / abord) * 100) : 0;
+  const recebido = all.filter((l) => l.pagamento === 'confirmado').reduce((a, l) => a + Number(l.valorPago ?? l.valor ?? 0), 0);
   $('#kpis').innerHTML = [
-    ['No CRM', all.length], ['Abordados', abord], ['Conversão', conv + '%'], ['Vendido', money(receita)], ['Recorrente/mês', money(mrr)],
+    ['No CRM', all.length], ['Abordados', abord], ['Conversão', conv + '%'], ['Fechado', money(receita)], ['Recebido', money(recebido)], ['Recorrente/mês', money(mrr)],
   ].map(([k, v]) => `<div class="kpi"><b>${v}</b><span>${k}</span></div>`).join('');
   const due = all.filter(isDue).length;
   $('#navFollow').hidden = !due; $('#navFollow').textContent = due;
@@ -45,9 +46,11 @@ function renderKpis() {
 
 /* ---------------- rotas ---------------- */
 function route() {
-  const v = (location.hash.match(/#\/(\w+)/) || [])[1] || 'buscar';
+  const v = (location.hash.match(/#\/(\w+)/) || [])[1] || 'inicio';
   $$('.view').forEach((s) => (s.hidden = s.id !== 'view-' + v));
   $$('#nav a').forEach((a) => a.classList.toggle('on', a.dataset.view === v));
+  if (v === 'inicio' && !route._jv) { route._jv = true; JVUI.montar($('#view-inicio'), { nav: (d) => (location.hash = '#/' + d), modo: 'site' }); }
+  if (v === 'metas') renderMetas();
   if (v === 'pipeline') renderPipeline();
   if (v === 'config') renderConfig();
   if (v === 'buscar') $('#demoBanner').hidden = !!S.cfg.apiKey || !S.results.length;
@@ -545,7 +548,10 @@ const TABS = {
       <span>Mensalidade (R$)</span><div><input type="number" data-field="mensal" value="${esc(l.mensal ?? S.cfg.mensalidade)}"></div>
       <span>Plano</span><div class="seg" data-seg="plano">${['Site Essencial', 'Site + Google', 'Site + Tráfego'].map((p) => `<button data-v="${p}" class="${l.plano === p ? 'on' : ''}">${p}</button>`).join('')}</div>
       <span>Status</span><div class="seg" data-seg="status">${[['convertido', 'Ganho ✅'], ['perdido', 'Perdido'], ['agendado', 'Em negociação']].map(([v, t]) => `<button data-v="${v}" class="${l.stage === v ? 'on' : ''}">${t}</button>`).join('')}</div>
+      <span>Pagamento</span><div class="seg" data-seg="pagamento">${[['pendente', 'Pendente'], ['confirmado', 'Confirmado 💰'], ['estornado', 'Estornado']].map(([v, t]) => `<button data-v="${v}" class="${(l.pagamento || '') === v ? 'on' : ''}">${t}</button>`).join('')}</div>
+      <span>Valor recebido (R$)</span><div><input type="number" data-field="valorPago" value="${esc(l.valorPago ?? l.valor ?? S.cfg.preco)}">${l.pagoEm ? `<small class="muted">confirmado em ${new Date(l.pagoEm).toLocaleString('pt-BR')}</small>` : ''}</div>
     </div>
+    <p class="muted small" style="margin:0">Só pagamento <b>confirmado</b> entra no faturamento recebido e nas metas de faturamento.</p>
     <label class="f"><span>Proposta</span><textarea id="propTxt" rows="12">${esc(msgFor(l, 'proposta'))}</textarea></label>
     <div class="row actions"><button class="btn" data-do="copyProp">Copiar</button><div class="spacer"></div><button class="btn wa big" data-do="sendProp" ${l.wa ? '' : 'disabled'}>Enviar proposta</button></div>`,
 
@@ -623,6 +629,15 @@ function bindDrawer() {
       const kind = seg.parentElement.dataset.seg;
       if (kind === 'stage' || kind === 'status') setStage(l.id, seg.dataset.v);
       if (kind === 'plano') { l.plano = seg.dataset.v; saveCRM(); }
+      if (kind === 'pagamento') {
+        const v = seg.dataset.v;
+        l.pagamento = v;
+        if (v === 'confirmado') { l.pagoEm = LV.now(); if (l.valorPago == null) l.valorPago = Number(l.valor ?? S.cfg.preco); if (l.stage !== 'convertido') setStage(l.id, 'convertido'); }
+        else l.pagoEm = null; // pendente/estornado não contam como recebido
+        saveCRM(); LV.webhook(S.cfg, 'lead.pagamento', l);
+        toast(v === 'confirmado' ? `💰 Pagamento de ${l.nome} confirmado!` : `Pagamento: ${v}`);
+      }
+      if ((kind === 'stage' || kind === 'status') && seg.dataset.v === 'convertido' && !l.pagamento) { l.pagamento = 'pendente'; saveCRM(); }
       renderDrawer(); return;
     }
     const b = e.target.closest('[data-do]'); if (!b) return;
@@ -687,8 +702,42 @@ function bindQueue() {
   $('#qSend').onclick = () => { const l = S.queue.leads[S.queue.i]; openWA(S.crm[l.id] || l, $('#qMsg').value); S.queue.i++; renderQueue(); };
 }
 
+/* ---------------- metas ---------------- */
+function renderMetas() {
+  const m = JV.progressoMeta();
+  const fmt = (v) => JV.fmtMeta(m, v);
+  $('#metaDesc').textContent = `Meta ${JV.NOME_PERIODO[m.periodo]} · medindo ${JV.NOME_METRICA[m.metrica]}`;
+  const marcos = [25, 50, 75, 100];
+  $('#metaBig').innerHTML = `
+    <div class="mb-v"><b>${fmt(m.atual)}</b> <span>de ${fmt(m.valor)}</span></div>
+    <div class="mb-bar"><i style="width:${m.pct}%"></i>${marcos.map((p) => `<u style="left:${p}%" class="${m.pct >= p ? 'ok' : ''}"><em>${p}%</em></u>`).join('')}</div>
+    <div class="mb-r"><span><b>${Math.round(m.pct)}%</b> atingido</span><span>faltam <b>${fmt(m.falta)}</b></span></div>
+    <p class="muted small">Período: ${m.inicio.toLocaleDateString('pt-BR')} a ${new Date(m.fim - 1).toLocaleDateString('pt-BR')}. ${m.metrica === 'recebido' ? 'Conta só pagamentos confirmados (estornos saem da conta).' : ''}</p>`;
+  // celebração discreta ao passar de um marco (uma vez por marco e período)
+  const chave = `lv2_marco_${m.metrica}_${m.periodo}_${m.inicio.toISOString().slice(0, 10)}`;
+  const ja = Number(localStorage.getItem(chave) || 0);
+  const marco = marcos.filter((p) => m.pct >= p).at(-1) || 0;
+  if (marco > ja) { localStorage.setItem(chave, marco); toast(marco === 100 ? '🏆 Meta batida! Parabéns!' : `🎉 ${marco}% da meta atingido!`); $('#metaBig').classList.add('celebra'); setTimeout(() => $('#metaBig').classList.remove('celebra'), 1600); }
+  $('#metaHist').innerHTML = JV.historicoMeta(6).map((h, i) => `<div class="mh"><span>${i === 0 ? 'Atual' : h.inicio.toLocaleDateString('pt-BR')}</span><div class="mh-bar"><i style="width:${h.pct}%"></i></div><b>${fmt(h.atual)}</b><small>${Math.round(h.pct)}%${h.pct >= 100 ? ' ✅' : ''}</small></div>`).join('');
+  const ant = JV.metas().anteriores;
+  $('#metaAnt').innerHTML = ant.length ? ant.slice().reverse().map((a) => `<div class="mh"><span>${new Date(a.criadaEm).toLocaleDateString('pt-BR')} → ${new Date(a.encerradaEm).toLocaleDateString('pt-BR')}</span><small>${JV.NOME_METRICA[a.metrica]} · ${JV.NOME_PERIODO[a.periodo]}</small><b>${JV.fmtMeta(a, a.valor)}</b></div>`).join('') : '<p class="muted small">Nenhuma meta anterior.</p>';
+}
+function bindMetas() {
+  const f = $('#metaForm');
+  $('#btnNovaMeta').onclick = () => { const m = JV.metas().atual; f.elements.metrica.value = m.metrica; f.elements.periodo.value = m.periodo; f.elements.valor.value = m.valor; f.hidden = false; };
+  $('#btnCancMeta').onclick = () => (f.hidden = true);
+  f.onsubmit = (e) => {
+    e.preventDefault();
+    const ms = JV.metas();
+    ms.anteriores.push({ ...ms.atual, encerradaEm: new Date().toISOString() }); // nada é apagado
+    ms.atual = { metrica: f.elements.metrica.value, periodo: f.elements.periodo.value, valor: Number(f.elements.valor.value), criadaEm: new Date().toISOString() };
+    JV.salvarMetas(ms); f.hidden = true; renderMetas(); toast('Nova meta salva');
+  };
+}
+
 /* ---------------- configurações ---------------- */
 function renderConfig() {
+  $('#jvFalar').checked = JV.cfg().falarAoIniciar;
   const f = $('#cfgForm');
   ['apiKey', 'meuNome', 'empresa', 'meuWhats', 'preco', 'mensalidade', 'followupDias', 'webhook', 'demoBase', 'roboUrl'].forEach((k) => (f.elements[k].value = S.cfg[k] ?? ''));
   f.elements.encurtar.checked = S.cfg.encurtar !== false;
@@ -697,6 +746,8 @@ function renderConfig() {
 }
 function bindConfig() {
   const f = $('#cfgForm');
+  $('#jvFalar').onchange = (e) => { JV.salvar({ falarAoIniciar: e.target.checked }); toast(e.target.checked ? 'Saudação falada ligada' : 'Saudação falada desligada'); };
+  $('#jvCfgBtn').onclick = () => { location.hash = '#/inicio'; setTimeout(() => JVUI.abrirConfig(), 300); };
   f.onsubmit = (e) => {
     e.preventDefault();
     const c = { ...S.cfg };
@@ -769,7 +820,7 @@ function bindResults() {
     f.elements.categoria.value = last.ctx.categoria || ''; f.elements.cidade.value = last.ctx.cidade || ''; f.elements.bairro.value = last.ctx.bairro || '';
     $('#emptySearch').hidden = true; renderResults();
   }
-  bindResults(); bindKanban(); bindDrawer(); bindQueue(); bindConfig();
+  bindResults(); bindKanban(); bindDrawer(); bindQueue(); bindConfig(); bindMetas();
   renderKpis();
   window.addEventListener('hashchange', route); route();
 })();

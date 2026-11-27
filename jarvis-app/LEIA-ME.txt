@@ -1,0 +1,24 @@
+J.A.R.V.I.S. — APP PARA WINDOWS
+================================
+
+INSTALAR
+1. Descompacte esta pasta.
+2. Dê dois cliques em INSTALAR.bat.
+   - Cria o atalho "JARVIS" na área de trabalho e no menu Iniciar (abre o app numa janela própria).
+   - Liga a escuta do "ok Jarvis" junto com o Windows.
+
+"OK JARVIS" COM TUDO FECHADO
+- Usa o reconhecimento de fala offline do próprio Windows.
+- Se o Windows ainda não tiver, aparece um aviso e abre Configurações > Fala:
+  adicione "English (United States)" (ou Português) com reconhecimento de fala e reinicie o PC.
+- Dentro do app aberto, o "ok Jarvis" funciona sempre (ligue em ⚙️ > Microfone).
+
+O QUE O JARVIS FAZ
+- Saudação falada (liga/desliga em ⚙️), notícias do Brasil e do mundo, dólar oficial (PTAX do Banco Central),
+  euro, libra e guarani, clima de Foz do Iguaçu, resumo das vendas, robô e metas.
+- Voz masculina ou feminina: no Edge aparecem as vozes naturais (ex.: Antonio, Francisca).
+- Conversa livre (opcional, grátis): instale o Ollama (ollama.com) e rode "ollama pull qwen2.5:3b".
+  O instalador já liberou o app para falar com o Ollama (OLLAMA_ORIGINS).
+
+DESINSTALAR
+- Dois cliques em DESINSTALAR.bat (dentro de %LOCALAPPDATA%\JARVIS ou desta pasta).
