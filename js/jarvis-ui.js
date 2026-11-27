@@ -21,6 +21,8 @@ const JVUI = (() => {
           <button class="jv-btn" data-a="noticias" title="Principais notícias do Brasil e do mundo + dólar oficial">📰 Notícias</button>
           <button class="jv-btn" data-a="cotacoes" title="Dólar, euro, libra e guarani">💱 Cotações</button>
           <button class="jv-btn jv-mic" data-a="mic" title="Falar com o JARVIS">🎙️ Falar</button>
+          <button class="jv-btn jv-stop" data-a="parar" title="Parar de falar (Esc)">⏹ Parar</button>
+          <button class="jv-btn jv-iron" data-a="ironman" title="Interface holográfica do filme (roda no seu computador)">🦾 Modo Homem de Ferro</button>
           <button class="jv-ico" data-a="mudo" id="jvMudo" title="Silenciar voz"></button>
           <button class="jv-ico" data-a="cfg" title="Configurações de voz e do JARVIS">⚙️</button>
         </div>
@@ -47,6 +49,7 @@ const JVUI = (() => {
     </div>`;
 
     el.querySelector('.jv-acoes').addEventListener('click', (e) => { const b = e.target.closest('[data-a]'); if (b) acao(b.dataset.a); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && JV.estado === 'falando') JV.parar(); });
     $('#jvPerg', el).addEventListener('submit', (e) => { e.preventDefault(); const i = e.target.querySelector('input'); const t = i.value.trim(); if (t) { i.value = ''; conversar(t); } });
     $('#jvPlay button', el).addEventListener('click', async () => { $('#jvPlay', el).hidden = true; JV.falar(await JV.saudacao(), { forcar: true }); localStorage.setItem('lv2_saudou_dia', JV.agora().iso); });
 
@@ -170,6 +173,13 @@ const JVUI = (() => {
 
   async function acao(a) {
     if (a === 'mic') return ouvir();
+    if (a === 'parar') { JV.parar(); aviso('Ok, parei.'); return; }
+    if (a === 'ironman') {
+      const ok = await fetch('http://localhost:8787/health').then((r) => r.ok).catch(() => false);
+      if (ok) { window.open('http://localhost:5173', 'jarvis-ironman', 'popup,width=1400,height=900'); return; }
+      balao('jv', 'O modo Homem de Ferro roda no seu computador. Abra o atalho "JARVIS Homem de Ferro" na área de trabalho (ou o JARVIS-IronMan.bat) e clique aqui de novo.');
+      return;
+    }
     if (a === 'mudo') { const m = !JV.cfg().mudo; JV.salvar({ mudo: m }); if (m) JV.parar(); pintarMudo(); return; }
     if (a === 'cfg') return abrirConfig();
     const fontes = { saudar: JV.saudacao, noticias: JV.textoNoticias, cotacoes: JV.textoCotacoes };

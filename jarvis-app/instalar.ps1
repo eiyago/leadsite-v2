@@ -4,7 +4,7 @@ $ORIGEM = Split-Path -Parent $MyInvocation.MyCommand.Path
 $DEST = Join-Path $env:LOCALAPPDATA 'JARVIS'
 $URL = 'https://eiyago.github.io/leadsite-v2/jarvis.html'
 New-Item -ItemType Directory -Force $DEST | Out-Null
-foreach ($f in 'ok-jarvis.ps1', 'JARVIS.bat', 'jarvis.ico', 'DESINSTALAR.bat', 'LEIA-ME.txt') { Copy-Item (Join-Path $ORIGEM $f) $DEST -Force }
+foreach ($f in 'ok-jarvis.ps1', 'JARVIS.bat', 'JARVIS-IronMan.bat', 'jarvis.ico', 'DESINSTALAR.bat', 'LEIA-ME.txt') { Copy-Item (Join-Path $ORIGEM $f) $DEST -Force }
 
 $ws = New-Object -ComObject WScript.Shell
 $edge = @("${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe", "$env:ProgramFiles\Microsoft\Edge\Application\msedge.exe") | Where-Object { Test-Path $_ } | Select-Object -First 1
@@ -12,6 +12,10 @@ foreach ($pasta in [Environment]::GetFolderPath('Desktop'), [Environment]::GetFo
   $s = $ws.CreateShortcut((Join-Path $pasta 'JARVIS.lnk'))
   if ($edge) { $s.TargetPath = $edge; $s.Arguments = "--app=$URL" } else { $s.TargetPath = Join-Path $DEST 'JARVIS.bat' }
   $s.IconLocation = Join-Path $DEST 'jarvis.ico'; $s.Description = 'J.A.R.V.I.S.'; $s.Save()
+  # modo Homem de Ferro: interface holográfica + cérebro Claude Code (Y:\jarvis-ironman)
+  $i = $ws.CreateShortcut((Join-Path $pasta 'JARVIS Homem de Ferro.lnk'))
+  $i.TargetPath = Join-Path $DEST 'JARVIS-IronMan.bat'; $i.WorkingDirectory = $DEST; $i.WindowStyle = 7
+  $i.IconLocation = Join-Path $DEST 'jarvis.ico'; $i.Description = 'J.A.R.V.I.S. - modo Homem de Ferro'; $i.Save()
 }
 $o = $ws.CreateShortcut((Join-Path ([Environment]::GetFolderPath('Startup')) 'ok-jarvis.lnk'))
 $o.TargetPath = 'powershell.exe'

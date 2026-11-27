@@ -272,16 +272,19 @@ const JV = (() => {
   }
 
   let filaFala = Promise.resolve();
-  function parar() { if ('speechSynthesis' in window) speechSynthesis.cancel(); setEstado('ocioso'); }
+  let geracao = 0; // "parar" invalida tudo o que estava na fila, inclusive os próximos trechos
+  function parar() { geracao++; if ('speechSynthesis' in window) speechSynthesis.cancel(); setEstado('ocioso'); }
   async function falar(texto, { forcar } = {}) {
     const c = cfg();
     emit('fala', texto);
     if (!texto || (c.mudo && !forcar) || !('speechSynthesis' in window)) return false;
     const voz = await vozEscolhida();
     const frases = pedacos(texto);
+    const minha = geracao;
     filaFala = filaFala.then(() => new Promise((res) => {
       let i = 0;
       const prox = () => {
+        if (minha !== geracao) return res(false);
         if (i >= frases.length) { setEstado('ocioso'); return res(true); }
         const u = new SpeechSynthesisUtterance(frases[i++].trim());
         if (voz) u.voice = voz; u.lang = voz?.lang || 'pt-BR';
@@ -401,11 +404,41 @@ const JV = (() => {
     if (!nomes.length) throw new Error('Ollama sem modelos');
     return nomes.includes(c.ollamaModelo) ? c.ollamaModelo : nomes[0];
   }
+  /* Cérebro "Homem de Ferro": o JARVIS holográfico (Y:\jarvis-ironman) roda o Claude Code no computador em ws://localhost:8787.
+     Quando ele está ligado, as perguntas livres vão para lá (só leitura; nada é alterado sem o modo de escrita). */
+  const CEREBRO = 'ws://localhost:8787';
+  function perguntarCerebro(prompt, ms = 90000) {
+    return new Promise((res, rej) => {
+      let ws; try { ws = new WebSocket(CEREBRO); } catch (e) { return rej(e); }
+      let txt = ''; const id = 'lv' + Date.now();
+      const fim = (fn, v) => { clearTimeout(tm); try { ws.close(); } catch { /* ok */ } fn(v); };
+      const tm = setTimeout(() => fim(rej, new Error('cérebro sem resposta')), ms);
+      ws.onerror = () => fim(rej, new Error('cérebro desligado'));
+      ws.onopen = () => ws.send(JSON.stringify({ type: 'ask', text: prompt, id }));
+      ws.onmessage = (e) => {
+        let m; try { m = JSON.parse(e.data); } catch { return; }
+        if (m.type === 'delta' && m.delta) txt += m.delta;
+        if (m.type === 'done') {
+          const r = (m.text || txt || '').trim();
+          if (/not logged in|please run \/login/i.test(r)) return fim(rej, new Error('cérebro sem login'));
+          fim(res, r);
+        }
+        if (m.type === 'error') fim(rej, new Error(m.message || 'erro no cérebro'));
+      };
+    });
+  }
   async function perguntarIA(pergunta) {
     const c = cfg();
+    try {
+      setEstado('pensando');
+      const r0 = await resumo().catch(() => null); const t0 = agora();
+      const ctx = { data: `${t0.semana}, ${t0.dia} de ${t0.mes} de ${t0.ano}`, hora: t0.hora, cidade: c.cidade, robo: r0?.robo && { hoje: r0.robo.hoje, cota: r0.robo.cota, prontos: r0.robo.prontos }, meta: r0?.meta && { atual: r0.meta.atual, valor: r0.meta.valor } };
+      const r = await perguntarCerebro(`${PERSONA()}\nDados reais de agora (JSON): ${JSON.stringify(ctx)}\n\nPergunta: ${pergunta}`);
+      if (r) return r;
+    } catch { /* sem cérebro Claude: tenta o Ollama */ }
     let modelo;
     try { modelo = await ollamaModelo(); } catch {
-      return 'Ainda não tenho uma IA local ligada para conversar livremente. Posso falar notícias, cotações, clima, o resumo das vendas e a meta. Para conversa livre, instale o Ollama: o passo a passo está nas configurações de voz.';
+      return 'Meu cérebro principal está desligado. Abra o atalho JARVIS Homem de Ferro no computador para eu conversar sobre qualquer assunto. Enquanto isso, posso falar notícias, cotações, clima, o resumo das vendas e a meta.';
     }
     setEstado('pensando');
     const r = await resumo().catch(() => null);
