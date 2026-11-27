@@ -22,3 +22,9 @@ O QUE O JARVIS FAZ
 
 DESINSTALAR
 - Dois cliques em DESINSTALAR.bat (dentro de %LOCALAPPDATA%\JARVIS ou desta pasta).
+
+CÉREBRO (conversa sobre qualquer assunto)
+- O JARVIS usa o Claude Code como cérebro, rodando escondido no seu PC (Y:\jarvis-ironman, só leitura).
+- Liga sozinho com o Windows e ao abrir o atalho JARVIS.
+- Precisa do login do Claude Code uma vez: no terminal, digite  claude  e entre na sua conta.
+- O app abre direto no painel e já fala a saudação, sem tela de introdução.

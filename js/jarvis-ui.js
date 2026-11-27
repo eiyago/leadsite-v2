@@ -10,6 +10,13 @@ const JVUI = (() => {
     timers.forEach(clearInterval); timers = [];
     el.innerHTML = `
     <div class="jv ${modo === 'app' ? 'jv-app' : ''}">
+      <div class="jv-scan" aria-hidden="true"></div>
+      <div class="jv-hud" aria-hidden="true">
+        <span><i class="jv-led ok"></i>SISTEMAS ONLINE</span>
+        <span id="jvCerebro"><i class="jv-led"></i>CÉREBRO …</span>
+        <span id="jvRelogio">--:--:--</span>
+        <span class="jv-hud-r">PROTOCOLO NEXA · v3</span>
+      </div>
       <header class="jv-top">
         <div class="jv-hi">
           <div class="jv-k">J.A.R.V.I.S. · Central de comando${modo === 'app' ? '' : ' · Lead Site V2'}</div>
@@ -22,7 +29,6 @@ const JVUI = (() => {
           <button class="jv-btn" data-a="cotacoes" title="Dólar, euro, libra e guarani">💱 Cotações</button>
           <button class="jv-btn jv-mic" data-a="mic" title="Falar com o JARVIS">🎙️ Falar</button>
           <button class="jv-btn jv-stop" data-a="parar" title="Parar de falar (Esc)">⏹ Parar</button>
-          <button class="jv-btn jv-iron" data-a="ironman" title="Interface holográfica do filme (roda no seu computador)">🦾 Modo Homem de Ferro</button>
           <button class="jv-ico" data-a="mudo" id="jvMudo" title="Silenciar voz"></button>
           <button class="jv-ico" data-a="cfg" title="Configurações de voz e do JARVIS">⚙️</button>
         </div>
@@ -33,7 +39,16 @@ const JVUI = (() => {
           <section class="jv-card" id="jvCot"><div class="jv-load">Carregando cotações…</div></section>
         </aside>
         <div class="jv-centro">
-          <div class="jv-orbwrap"><canvas id="jvOrb" aria-label="Núcleo 3D do JARVIS — arraste para girar"></canvas><div class="jv-orbfb"></div></div>
+          <div class="jv-orbwrap">
+            <svg class="jv-rings" viewBox="0 0 400 400" aria-hidden="true">
+              <circle class="r1" cx="200" cy="200" r="192"/>
+              <circle class="r2" cx="200" cy="200" r="178"/>
+              <circle class="r3" cx="200" cy="200" r="164"/>
+              <circle class="r4" cx="200" cy="200" r="140"/>
+              <g class="tk">${Array.from({ length: 60 }, (_, i) => `<line x1="200" y1="4" x2="200" y2="${i % 5 ? 12 : 20}" transform="rotate(${i * 6} 200 200)"/>`).join('')}</g>
+            </svg>
+            <canvas id="jvOrb" aria-label="Núcleo 3D do JARVIS — arraste para girar"></canvas><div class="jv-orbfb"></div>
+          </div>
           <div class="jv-estado" id="jvEstado"></div>
           <div class="jv-chat" id="jvChat"></div>
           <form class="jv-perg" id="jvPerg"><input placeholder="Pergunte ou dê um comando ao JARVIS…" aria-label="Pergunta"><button aria-label="Enviar">➤</button></form>
@@ -51,7 +66,7 @@ const JVUI = (() => {
     el.querySelector('.jv-acoes').addEventListener('click', (e) => { const b = e.target.closest('[data-a]'); if (b) acao(b.dataset.a); });
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && JV.estado === 'falando') JV.parar(); });
     $('#jvPerg', el).addEventListener('submit', (e) => { e.preventDefault(); const i = e.target.querySelector('input'); const t = i.value.trim(); if (t) { i.value = ''; conversar(t); } });
-    $('#jvPlay button', el).addEventListener('click', async () => { $('#jvPlay', el).hidden = true; JV.falar(await JV.saudacao(), { forcar: true }); localStorage.setItem('lv2_saudou_dia', JV.agora().iso); });
+    $('#jvPlay button', el).addEventListener('click', async () => { if ($('#jvPlay', el).hidden) return; $('#jvPlay', el).hidden = true; JV.falar(await JV.saudacao(), { forcar: true }); localStorage.setItem('lv2_saudou_dia', JV.agora().iso); });
 
     if (!montar._ok) {
       montar._ok = true;
@@ -69,7 +84,22 @@ const JVUI = (() => {
 
     JV.orb($('#jvOrb', el));
     ligarWake();
-    JV.saudarAoIniciar(() => { const p = $('#jvPlay', raiz); if (p) p.hidden = false; });
+    hud(); timers.push(setInterval(hud, 1000));
+    cerebro(); timers.push(setInterval(cerebro, 30e3));
+    // saudação já ao abrir; se o navegador bloquear o áudio, começa no primeiro clique/tecla em qualquer lugar
+    JV.saudarAoIniciar(() => {
+      const p = $('#jvPlay', raiz); if (p) p.hidden = false;
+      const vai = () => { document.removeEventListener('pointerdown', vai, true); document.removeEventListener('keydown', vai, true); if (p && !p.hidden) p.querySelector('button').click(); };
+      document.addEventListener('pointerdown', vai, true); document.addEventListener('keydown', vai, true);
+    });
+  }
+
+  /* ---------- HUD (estilo Stark) ---------- */
+  function hud() { const e = $('#jvRelogio', raiz); if (e) e.textContent = new Date().toLocaleTimeString('pt-BR'); }
+  async function cerebro() {
+    const e = $('#jvCerebro', raiz); if (!e) return;
+    const ok = await fetch('http://localhost:8787/health', { cache: 'no-store' }).then((r) => r.ok).catch(() => false);
+    e.innerHTML = `<i class="jv-led ${ok ? 'ok' : 'off'}"></i>CÉREBRO ${ok ? 'CLAUDE ONLINE' : 'LOCAL'}`;
   }
 
   /* ---------- topo ---------- */
@@ -173,14 +203,7 @@ const JVUI = (() => {
 
   async function acao(a) {
     if (a === 'mic') return ouvir();
-    if (a === 'parar') { JV.parar(); aviso('Ok, parei.'); return; }
-    if (a === 'ironman') {
-      const ok = await fetch('http://localhost:8787/health').then((r) => r.ok).catch(() => false);
-      if (ok) { window.open('http://localhost:5173', 'jarvis-ironman', 'popup,width=1400,height=900'); return; }
-      balao('jv', 'O modo Homem de Ferro roda no seu computador. Abra o atalho "JARVIS Homem de Ferro" na área de trabalho (ou o JARVIS-IronMan.bat) e clique aqui de novo.');
-      return;
-    }
-    if (a === 'mudo') { const m = !JV.cfg().mudo; JV.salvar({ mudo: m }); if (m) JV.parar(); pintarMudo(); return; }
+    if (a === 'parar') { JV.parar(); aviso('Ok, parei.'); return; }    if (a === 'mudo') { const m = !JV.cfg().mudo; JV.salvar({ mudo: m }); if (m) JV.parar(); pintarMudo(); return; }
     if (a === 'cfg') return abrirConfig();
     const fontes = { saudar: JV.saudacao, noticias: JV.textoNoticias, cotacoes: JV.textoCotacoes };
     JV.setEstado('pensando');

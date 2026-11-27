@@ -85,4 +85,30 @@ canvas.sem3d+.jv-orbfb{display:block;position:absolute;inset:18%;border-radius:5
 @media (max-width:1100px){.jv-grid{grid-template-columns:1fr 1fr}.jv-centro{grid-column:1/-1;order:-1}}
 @media (max-width:700px){.jv{padding:14px;border-radius:0}.jv-grid{grid-template-columns:1fr}.jv-orbwrap{max-width:320px}.jv-acoes{width:100%}.jv-btn{flex:1}}
 @media (prefers-reduced-motion:reduce){.jv *{animation:none!important;transition:none!important}}
+/* ---------- HUD holográfico (estilo filme): linha de status, anéis do reator, cantos e varredura ---------- */
+.jv-scan{position:absolute;inset:0;pointer-events:none;z-index:0;background:repeating-linear-gradient(180deg,rgba(34,211,238,.035) 0 1px,transparent 1px 3px);mix-blend-mode:screen}
+.jv-scan:after{content:"";position:absolute;left:0;right:0;height:120px;top:-120px;background:linear-gradient(180deg,transparent,rgba(34,211,238,.07),transparent);animation:jvvarre 7s linear infinite}
+@keyframes jvvarre{to{top:100%}}
+.jv-hud{display:flex;gap:22px;flex-wrap:wrap;align-items:center;font:600 10.5px/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.2em;color:var(--cy);opacity:.85;padding-bottom:12px;margin-bottom:16px;border-bottom:1px solid var(--ln)}
+.jv-hud span{display:inline-flex;align-items:center;gap:7px}.jv-hud-r{margin-left:auto;opacity:.6}
+.jv-led{width:7px;height:7px;border-radius:50%;background:#64748b;display:inline-block}
+.jv-led.ok{background:var(--ok);box-shadow:0 0 8px var(--ok);animation:jvled 2.4s infinite}.jv-led.off{background:var(--wr);box-shadow:0 0 6px var(--wr)}
+@keyframes jvled{50%{opacity:.45}}
+.jv h1{text-shadow:0 0 18px rgba(56,189,248,.35)}
+.jv-card{position:relative;box-shadow:inset 0 0 30px rgba(56,189,248,.04),0 0 0 1px rgba(56,189,248,.03)}
+.jv-card:before,.jv-card:after{content:"";position:absolute;width:14px;height:14px;border:2px solid var(--cy);opacity:.7;pointer-events:none}
+.jv-card:before{top:-1px;left:-1px;border-right:0;border-bottom:0;border-top-left-radius:14px}
+.jv-card:after{bottom:-1px;right:-1px;border-left:0;border-top:0;border-bottom-right-radius:14px}
+.jv-ct{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
+.jv-rings{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.jv-rings circle{fill:none;stroke:var(--cy);transform-origin:200px 200px}
+.jv-rings .r1{stroke-width:1;opacity:.35;stroke-dasharray:2 6;animation:jvgira 60s linear infinite}
+.jv-rings .r2{stroke-width:2.5;opacity:.55;stroke-dasharray:180 60 40 60;animation:jvgira 22s linear infinite reverse}
+.jv-rings .r3{stroke-width:1;opacity:.4;stroke-dasharray:90 20;animation:jvgira 34s linear infinite}
+.jv-rings .r4{stroke-width:6;opacity:.12;stroke-dasharray:4 10;animation:jvgira 14s linear infinite reverse}
+.jv-rings .tk{stroke:var(--cy);stroke-width:1.2;opacity:.45;transform-origin:200px 200px;animation:jvgira 120s linear infinite}
+@keyframes jvgira{to{transform:rotate(360deg)}}
+.jv[data-estado=falando] .jv-rings .r2,.jv[data-estado=pensando] .jv-rings .r2{animation-duration:4s;opacity:.9;filter:drop-shadow(0 0 6px var(--cy))}
+.jv[data-estado=ouvindo] .jv-rings circle{stroke:var(--ok)}
+.jv-stop{border-color:rgba(251,113,133,.35)}.jv-stop:hover{background:rgba(251,113,133,.16);border-color:rgba(251,113,133,.6)}
 .jv-moeda{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:6px;background:rgba(56,189,248,.14);color:var(--cy);font-style:normal;font-weight:700;font-size:12px;margin-right:8px}

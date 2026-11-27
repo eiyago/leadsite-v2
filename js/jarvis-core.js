@@ -438,7 +438,7 @@ const JV = (() => {
     } catch { /* sem cérebro Claude: tenta o Ollama */ }
     let modelo;
     try { modelo = await ollamaModelo(); } catch {
-      return 'Meu cérebro principal está desligado. Abra o atalho JARVIS Homem de Ferro no computador para eu conversar sobre qualquer assunto. Enquanto isso, posso falar notícias, cotações, clima, o resumo das vendas e a meta.';
+      return 'Meu cérebro principal está desligado. Abra o JARVIS pelo atalho do computador (ele liga o cérebro sozinho) para eu conversar sobre qualquer assunto. Enquanto isso, posso falar notícias, cotações, clima, o resumo das vendas e a meta.';
     }
     setEstado('pensando');
     const r = await resumo().catch(() => null);
