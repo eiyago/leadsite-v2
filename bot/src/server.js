@@ -7,6 +7,7 @@ import { conectado, qrAtual } from './wa.js';
 import * as F from './funil.js';
 import { enriquecer } from './places.js';
 import { linkPrevia } from './site-link.js';
+import { salvarMidia } from './midia.js';
 import { cotaHoje, teste, abordarAgora, leadManual, cidadeAtual } from './robo.js';
 
 const PAGINA_QR = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Conectar WhatsApp — Robô LeadSite</title>
@@ -122,6 +123,24 @@ export function iniciarServidor() {
       else if (acao === 'perdido') DB.upsert({ id, etapa: 'perdido' });
       else if (acao === 'respondeu') DB.upsert({ id, etapa: 'negociando', canal: 'instagram', respondeu: true, respondeuEm: new Date().toISOString() });
       return send({ ok: true });
+    }
+    /* banco de mídia: quem precisa de coleta (logo, fotos, avaliações) — próximos da fila do WhatsApp, do Instagram e conversas */
+    if (url.pathname === '/coletar') {
+      const handle = (l) => (String(l.site || '').match(/instagram\.com\/([^/?#]+)/i) || [])[1] || l.sx?.ig || '';
+      const sem = (l) => !l.midiaEm;
+      const conv = DB.leads().filter((l) => sem(l) && /^(oi|pitch|ig_oi|ig_pitch)$/.test(l.etapa));
+      const ig = DB.leads().filter((l) => sem(l) && l.etapa === 'ig_fila').sort((a, b) => b.score - a.score).slice(0, 3);
+      const wa = DB.leads().filter((l) => sem(l) && l.etapa === 'fila').sort((a, b) => (b.temp === 'quente') - (a.temp === 'quente') || b.score - a.score).slice(0, 3);
+      return send([...conv, ...ig, ...wa].map((l) => ({ id: l.id, nome: l.nome, categoria: l.categoria, insta: handle(l), maps: `https://www.google.com/maps/place/?q=place_id:${l.id}&hl=pt-BR`, etapa: l.etapa })));
+    }
+    if (req.method === 'POST' && /^\/lead\/[^/]+\/midia$/.test(url.pathname)) {
+      const id = decodeURIComponent(url.pathname.split('/')[2]);
+      let body = ''; req.on('data', (c) => { body += c; if (body.length > 2e5) req.destroy(); });
+      req.on('end', () => {
+        let k; try { k = JSON.parse(body || '{}'); } catch { return send({ ok: false, erro: 'json inválido' }, 400); }
+        salvarMidia(id, k).then((r) => send({ ok: true, ...r })).catch((e) => send({ ok: false, erro: e.message }, 400));
+      });
+      return;
     }
     if (req.method === 'POST' && url.pathname === '/pausar') { DB.setMeta('pausado', true); return send({ ok: true }); }
     if (req.method === 'POST' && url.pathname === '/retomar') { DB.setMeta('pausado', false); return send({ ok: true }); }

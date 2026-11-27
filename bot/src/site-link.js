@@ -14,6 +14,8 @@ export function siteData(l, extra = {}) {
   if (l.avaliacoes?.length) d.rv = l.avaliacoes;
   if (l.horarios?.length) d.h = l.horarios;
   if (l.resumo) d.es = l.resumo;
+  // kit do banco de mídia: logo (lg), serviços com preço (sv), slogan real (hl), subtítulo (sub), Instagram (ig)
+  if (l.sx) Object.entries(l.sx).forEach(([k, v]) => { if (v !== '' && v != null && !(Array.isArray(v) && !v.length)) d[k] = v; });
   return { ...d, ...extra };
 }
 

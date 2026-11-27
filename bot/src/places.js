@@ -67,15 +67,16 @@ export async function enriquecer(l) {
   const r = await fetch(`https://places.googleapis.com/v1/places/${encodeURIComponent(l.id)}?languageCode=pt-BR`, { headers: h });
   const j = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(j.error?.message || 'Falha nos detalhes');
-  l.avaliacoes = (j.reviews || []).filter((v) => v.rating >= 4 && v.text?.text).slice(0, 3)
+  const avs = (j.reviews || []).filter((v) => v.rating >= 4 && v.text?.text).slice(0, 3)
     .map((v) => ({ a: v.authorAttribution?.displayName || 'Cliente', r: v.rating, t: v.text.text.length > 260 ? v.text.text.slice(0, 257).trim() + '…' : v.text.text }));
+  if (avs.length) l.avaliacoes = avs; // não apaga as avaliações reais coletadas no banco de mídia
   if (j.regularOpeningHours?.weekdayDescriptions?.length) l.horarios = j.regularOpeningHours.weekdayDescriptions;
-  if (j.editorialSummary?.text) l.resumo = j.editorialSummary.text;
+  if (j.editorialSummary?.text && !l.resumo) l.resumo = j.editorialSummary.text;
   const nomes = (j.photos || []).slice(0, 5).map((p) => p.name); // 5 fotos próprias: bom visual gastando menos cota
   const fotos = await Promise.all(nomes.map((n) =>
     fetch(`https://places.googleapis.com/v1/${n}/media?maxWidthPx=1800&skipHttpRedirect=true&key=${encodeURIComponent(CFG.placesKey)}`, { headers: { Referer: CFG.demoBase } })
       .then((x) => x.json()).then((x) => x.photoUri || null).catch(() => null)));
-  l.fotos = fotos.filter(Boolean);
+  if (fotos.some(Boolean)) l.fotos = fotos.filter(Boolean); // idem para as fotos
   l.enriched = new Date().toISOString();
   return l;
 }

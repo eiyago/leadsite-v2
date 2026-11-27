@@ -418,10 +418,21 @@ var LSite = (function () {
       '<div class="cta" data-r>' + btnWA(N.short, 'sm') + '</div></div></div></section>';
 
     /* galeria */
-    var gp = ph.slice(0, P.own >= 8 ? 8 : 6);
+    var igOn = !!d.ig && P.own >= 7; // fotos próprias de sobra: galeria (ambiente) + vitrine do Instagram sem repetir
+    var gp = ph.slice(0, igOn ? 4 : (P.own >= 8 ? 8 : 6));
     var gallery = '<section id="galeria" class="alt"><div class="wrap">' + sh('Galeria', P.own >= 3 ? 'Por dentro da ' + d.n : 'Ambiente e rotina') + '<div class="gal g' + gp.length + '">' +
       gp.map(function (u, i) { return '<figure data-r="clip" style="--d:' + (i % 4) * .08 + 's"><img src="' + u + '" alt="' + esc(d.n) + ' — foto ' + (i + 1) + '" loading="lazy"></figure>'; }).join('') + '</div>' +
-      (P.own ? '<p class="credit">Fotos: Google Maps</p>' : '') + '</div></section>';
+      (P.own ? '<p class="credit">Fotos reais de ' + esc(d.n) + '</p>' : '') + '</div></section>';
+
+    /* vitrine do Instagram com as fotos reais do perfil (só quando há fotos próprias suficientes) */
+    var igH = d.ig ? String(d.ig).replace(/^@|https?:\/\/(www\.)?instagram\.com\//g, '').replace(/\/$/, '') : '';
+    var igFeed = '';
+    if (igH && igOn) {
+      var igPh = P.photos.slice(4, P.own).slice(0, 6);
+      igFeed = '<section class="igf"><div class="wrap"><div class="igf-top" data-r><div><span class="eyb">Instagram</span><h2 class="disp">@' + esc(igH) + '</h2></div>' +
+        '<a class="btn btn-gh sm" href="https://instagram.com/' + esc(igH) + '" target="_blank" rel="noopener">' + ICON.ig + '<span>Seguir no Instagram</span></a></div>' +
+        '<div class="igf-g" style="grid-template-columns:repeat(' + igPh.length + ',1fr)">' + igPh.map(function (u, i) { return '<a href="https://instagram.com/' + esc(igH) + '" target="_blank" rel="noopener" data-r="clip" style="--d:' + (i % 6) * .06 + 's"><img src="' + u + '" alt="Post de @' + esc(igH) + '" loading="lazy"></a>'; }).join('') + '</div></div></section>';
+    }
 
     /* avaliações (somente reais) */
     var reviews = '';
@@ -467,7 +478,7 @@ var LSite = (function () {
       nav.filter(function (x) { return x[0] !== 'avaliacoes' || d.r; }).map(function (x) { return '<a href="#' + x[0] + '">' + esc(x[1]) + '</a>'; }).join('') + '</div>' + btnWA('WhatsApp', 'sm') +
       '<button class="burger" aria-label="Menu"><i></i><i></i></button></div></nav>' +
       '<div class="mnav">' + nav.map(function (x) { return '<a href="#' + x[0] + '">' + esc(x[1]) + '</a>'; }).join('') + '<div style="margin-top:20px">' + btnWA() + '</div></div>' +
-      '<main>' + hero + marquee + services + (r() > .5 ? perks + about : about + perks) + gallery + reviews + band + contact + faq + '</main>' + footer +
+      '<main>' + hero + marquee + services + (r() > .5 ? perks + about : about + perks) + gallery + reviews + igFeed + band + contact + faq + '</main>' + footer +
       '<a class="fwa" href="' + wa + '" target="_blank" rel="noopener" aria-label="WhatsApp">' + ICON.wa + '<span>Fale com a gente</span></a>' + pv + '<div class="lb"><img alt=""></div>';
 
     var title = d.n + ' — ' + (d.c || '') + (P.ci ? ' em ' + P.ci : '');
@@ -479,15 +490,48 @@ var LSite = (function () {
       '<title>' + esc(title) + '</title><meta name="description" content="' + esc(desc) + '">' + (opts.exported ? '' : '<meta name="robots" content="noindex">') +
       '<meta property="og:title" content="' + esc(title) + '"><meta property="og:description" content="' + esc(desc) + '"><meta property="og:image" content="' + esc(ph[0]) + '"><meta name="theme-color" content="' + P.pal.bg + '">' + favicon(P, d) +
       '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?' + P.font.q + '&display=swap">' +
-      '<style>' + css(P) + '.map iframe{--mapf:' + (P.dark ? 'grayscale(.4) invert(.9) hue-rotate(180deg)' : 'grayscale(.2)') + '}</style>' +
+      '<style>' + css(P) + '.map iframe{--mapf:' + (P.dark ? 'grayscale(.4) invert(.9) hue-rotate(180deg)' : 'grayscale(.2)') + '}' +
+      '.igf-top{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:28px}.igf-top .btn svg{width:18px;height:18px}' +
+      '.igf-g{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}.igf-g a{display:block;aspect-ratio:1;overflow:hidden;border-radius:calc(var(--r)*.6)}' +
+      '.igf-g img{width:100%;height:100%;object-fit:cover;transition:transform .7s cubic-bezier(.2,.8,.2,1),filter .4s}.igf-g a:hover img{transform:scale(1.07);filter:saturate(1.15)}' +
+      '@media(max-width:760px){.igf-g{grid-template-columns:repeat(3,1fr)!important}}</style>' +
       '<noscript><style>[data-r]{opacity:1!important;transform:none!important;clip-path:none!important}.w{transform:none!important}</style></noscript>' +
       '<script type="application/ld+json">' + JSON.stringify(ld).replace(/</g, '\\u003c') + '</script></head><body>' + body +
+      '<script>window.LSS=' + JSON.stringify(P.stock.slice(0, 8)) + ';window.LSO=' + (d.ac ? 0 : 1) + '</script>' +
       '<script>(' + boot.toString() + ')()</script></body></html>';
   }
 
   /* ---------- runtime das animações (autocontido: vai junto no site exportado) ---------- */
   function boot() {
     var q = function (s) { return Array.prototype.slice.call(document.querySelectorAll(s)); };
+    /* foto real ainda não publicada (ou fora do ar): troca por uma do banco, sem buraco no layout */
+    var reserva = (window.LSS || []).slice(), ri = 0;
+    q('img').forEach(function (im) {
+      if (im.closest('.mono') || im.closest('.seal')) return;
+      im.addEventListener('error', function () { if (!im.dataset.rv && reserva.length) { im.dataset.rv = 1; im.src = reserva[ri++ % reserva.length]; } });
+    });
+    /* cor da marca: tira a cor dominante do logo real e usa como destaque do site (só logo do mesmo endereço) */
+    (function () {
+      var lg = document.querySelector('.mono img'); if (!lg || !window.LSO) return;
+      var usa = function () {
+        try {
+          var c = document.createElement('canvas'), s = 48; c.width = c.height = s; var x = c.getContext('2d');
+          x.drawImage(lg, 0, 0, s, s); var px = x.getImageData(0, 0, s, s).data, best = null, cont = {};
+          for (var i = 0; i < px.length; i += 4) {
+            if (px[i + 3] < 200) continue;
+            var r = px[i], g = px[i + 1], b = px[i + 2], mx = Math.max(r, g, b), mn = Math.min(r, g, b), sat = mx ? (mx - mn) / mx : 0;
+            if (sat < .38 || mx < 70) continue; // ignora preto, branco e cinza
+            var k = (r >> 5) + ',' + (g >> 5) + ',' + (b >> 5); cont[k] = (cont[k] || { n: 0, r: 0, g: 0, b: 0 }); cont[k].n++; cont[k].r += r; cont[k].g += g; cont[k].b += b;
+          }
+          for (var kk in cont) if (!best || cont[kk].n > best.n) best = cont[kk];
+          if (!best || best.n < 40) return; // logo sem cor marcante: mantém a paleta do nicho
+          var R = Math.round(best.r / best.n), G = Math.round(best.g / best.n), B = Math.round(best.b / best.n);
+          var L = (.2126 * R + .7152 * G + .0722 * B) / 255, st = document.documentElement.style;
+          st.setProperty('--ac', 'rgb(' + R + ',' + G + ',' + B + ')'); st.setProperty('--acs', 'rgba(' + R + ',' + G + ',' + B + ',.14)'); st.setProperty('--on', L > .55 ? '#111111' : '#ffffff');
+        } catch (e) { /* logo de outro endereço: sem leitura de pixels */ }
+      };
+      if (lg.complete && lg.naturalWidth) usa(); else lg.addEventListener('load', usa);
+    })();
     var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
     var nav = document.querySelector('.nav'), bar = document.querySelector('.prog'), px = q('[data-px]'), tick = false;
     var pend = q('[data-r],[data-count]');
