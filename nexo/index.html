@@ -7,12 +7,12 @@
 <meta name="description" content="Site profissional para o seu negócio em Foz do Iguaçu: suas fotos, seus serviços, avaliações do Google e botão de WhatsApp. R$250, pagamento único, sem mensalidade. Prévia grátis.">
 <meta property="og:title" content="Nexo Digital — Sites para empresas de Foz do Iguaçu">
 <meta property="og:description" content="Veja grátis como ficaria o site da sua empresa. R$250, pagamento único, sem mensalidade.">
-<meta name="theme-color" content="#0f1013">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230f1013'/%3E%3Cpath d='M18 46V18h6l16 20V18h6v28h-6L24 26v20z' fill='%23c6ff3d'/%3E%3C/svg%3E">
+<meta name="theme-color" content="#3628f9"><meta property="og:image" content="https://eiyago.github.io/leadsite-v2/nexo/nexo-simbolo.png">
+<link rel="icon" type="image/png" href="nexo-simbolo.png"><link rel="apple-touch-icon" href="nexo-simbolo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Manrope:wght@400;500;600;700&display=swap">
 <style>
-:root{--ink:#0f1013;--paper:#f3f1ea;--mut:#5d5f66;--line:rgba(15,16,19,.12);--lime:#c6ff3d;--wa:#12803f;--r:18px;--ease:cubic-bezier(.2,.8,.2,1)}
+:root{--ink:#0f1013;--paper:#f3f1ea;--mut:#5d5f66;--line:rgba(15,16,19,.12);--lime:#3628f9;--brand:#3628f9;--brand2:#2a1fd1;--tint:#dcd9ff;--wa:#12803f;--r:18px;--ease:cubic-bezier(.2,.8,.2,1)}
 *{box-sizing:border-box}html{scroll-behavior:smooth}
 body{margin:0;background:var(--paper);color:var(--ink);font:400 17px/1.6 Manrope,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
 a{color:inherit}img{max-width:100%;display:block}
@@ -22,12 +22,12 @@ h1,h2,h3{font-family:Fraunces,Georgia,serif;font-weight:700;letter-spacing:-.02e
 .btn{display:inline-flex;align-items:center;gap:10px;padding:16px 26px;border-radius:999px;font-weight:700;text-decoration:none;transition:transform .3s var(--ease),background .3s,color .3s}
 .btn svg{width:20px;height:20px}
 .btn-wa{background:var(--wa);color:#fff}.btn-wa:hover{transform:translateY(-2px);background:#0e6b34}
-.btn-gh{border:1.5px solid var(--ink)}.btn-gh:hover{background:var(--ink);color:var(--paper)}
+.btn-gh{border:1.5px solid var(--ink)}.btn-gh:hover{background:var(--brand);border-color:var(--brand);color:#fff}
 /* nav */
 nav{position:sticky;top:0;z-index:20;background:rgba(243,241,234,.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
 nav .wrap{display:flex;align-items:center;justify-content:space-between;height:68px}
 .logo{display:flex;align-items:center;gap:10px;font-weight:700;text-decoration:none;font-size:18px}
-.logo i{width:32px;height:32px;border-radius:9px;background:var(--ink);display:grid;place-items:center}
+.logo img{width:34px;height:34px;border-radius:9px}
 .logo i svg{width:18px;height:18px}
 nav .links{display:flex;gap:28px;font-size:15px}nav .links a{text-decoration:none;color:var(--mut)}nav .links a:hover{color:var(--ink)}
 nav .btn{padding:11px 18px;font-size:14px}
@@ -35,13 +35,13 @@ nav .btn{padding:11px 18px;font-size:14px}
 .hero{padding:72px 0 40px;overflow:hidden}
 .hero .wrap{display:grid;grid-template-columns:1.15fr .85fr;gap:56px;align-items:center}
 .hero h1{font-size:clamp(42px,6.2vw,80px)}
-.hero h1 em{font-style:italic;font-weight:500;background:linear-gradient(transparent 62%,var(--lime) 62%,var(--lime) 92%,transparent 92%)}
+.hero h1 em{font-style:italic;font-weight:500;color:var(--brand);background:linear-gradient(transparent 64%,var(--tint) 64%,var(--tint) 94%,transparent 94%)}
 .hero p.lead{font-size:20px;color:var(--mut);max-width:34ch;margin:22px 0 32px}
 .hero .cta{display:flex;flex-wrap:wrap;gap:12px}
 .hero .note{margin-top:18px;font-size:14px;color:var(--mut)}
 .phone{position:relative;justify-self:center;width:min(330px,80vw);aspect-ratio:9/19;border-radius:44px;background:var(--ink);padding:12px;box-shadow:0 40px 80px -30px rgba(15,16,19,.45);transform:rotate(3deg)}
 .phone iframe{width:100%;height:100%;border:0;border-radius:34px;background:#fff}
-.phone .tag{position:absolute;left:-26px;bottom:60px;background:var(--lime);color:var(--ink);font-weight:700;font-size:13px;padding:10px 14px;border-radius:12px;transform:rotate(-6deg);box-shadow:0 10px 24px -12px rgba(0,0,0,.4)}
+.phone .tag{position:absolute;left:-26px;bottom:60px;background:var(--brand);color:#fff;font-weight:700;font-size:13px;padding:10px 14px;border-radius:12px;transform:rotate(-6deg);box-shadow:0 10px 24px -12px rgba(0,0,0,.4)}
 /* faixa */
 .strip{border-block:1px solid var(--line);padding:18px 0;overflow:hidden;white-space:nowrap}
 .strip .tr{display:inline-flex;gap:48px;animation:mq 34s linear infinite;font-family:Fraunces,serif;font-size:22px}
@@ -54,19 +54,19 @@ section{padding:96px 0}
 .prob div{padding:28px 28px 8px 0}.prob div+div{padding-left:28px;border-left:1px solid var(--line)}
 .prob b{font-family:Fraunces,serif;font-size:44px;display:block;line-height:1}.prob h3{font-size:24px;margin:18px 0 10px}.prob p{color:var(--mut);margin:0}
 /* exemplos */
-.dark{background:var(--ink);color:var(--paper)}.dark .eyb,.dark .sh p{color:#a7a8ad}
+.dark{background:var(--brand);color:#fff}.dark .eyb,.dark .sh p{color:#d8d5ff}
 .demos{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
-.demo{display:block;text-decoration:none;border-radius:var(--r);overflow:hidden;background:#1a1b20;transition:transform .5s var(--ease)}
+.demo{display:block;text-decoration:none;border-radius:var(--r);overflow:hidden;background:var(--brand2);transition:transform .5s var(--ease)}
 .demo:hover{transform:translateY(-6px)}
 .demo .fr{aspect-ratio:3/4;position:relative;overflow:hidden;background:#fff}
 .demo iframe{position:absolute;top:0;left:0;width:300%;height:300%;transform:scale(.3334);transform-origin:0 0;border:0;pointer-events:none}
 .demo .bd{padding:18px 20px;display:flex;justify-content:space-between;align-items:center}
-.demo b{font-family:Fraunces,serif;font-size:20px}.demo span{font-size:13px;color:#a7a8ad}
-.disc{margin-top:22px;font-size:13px;color:#a7a8ad}
+.demo b{font-family:Fraunces,serif;font-size:20px}.demo span{font-size:13px;color:#d8d5ff}
+.disc{margin-top:22px;font-size:13px;color:#d8d5ff}
 /* inclui */
 .inc{display:grid;grid-template-columns:1fr 1fr;gap:0 56px}
 .inc li{list-style:none;padding:20px 0;border-bottom:1px solid var(--line);display:grid;grid-template-columns:28px 1fr;gap:14px}
-.inc li:before{content:"";width:12px;height:12px;border-radius:50%;background:var(--ink);margin-top:8px;box-shadow:0 0 0 4px var(--lime)}
+.inc li:before{content:"";width:12px;height:12px;border-radius:50%;background:var(--ink);margin-top:8px;box-shadow:0 0 0 4px var(--tint)}
 .inc h3{font-size:20px;font-family:Manrope,sans-serif;font-weight:700;letter-spacing:0}.inc p{margin:4px 0 0;color:var(--mut);font-size:15px}
 .inc ul{margin:0;padding:0}
 /* passos */
@@ -76,16 +76,16 @@ section{padding:96px 0}
 .step h3{font-size:24px}.step p{color:var(--mut);margin:10px 0 0}
 /* preço */
 .price{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center}
-.card{border-radius:28px;background:var(--ink);color:var(--paper);padding:44px}
+.card{border-radius:28px;background:var(--brand);color:#fff;padding:44px}
 .card .v{font-family:Fraunces,serif;font-size:96px;line-height:1;margin:14px 0 6px}.card .v small{font-size:32px;vertical-align:top;margin-right:6px}
-.card .v-s{color:#a7a8ad}.card ul{padding:0;margin:28px 0;list-style:none}.card li{padding:10px 0;border-top:1px solid rgba(255,255,255,.1)}.card li:before{content:"✓";color:var(--lime);margin-right:12px;font-weight:700}
+.card .v-s{color:#d8d5ff}.card ul{padding:0;margin:28px 0;list-style:none}.card li{padding:10px 0;border-top:1px solid rgba(255,255,255,.18)}.card li:before{content:"✓";color:#fff;margin-right:12px;font-weight:700}
 .card .btn{width:100%;justify-content:center}
 /* faq */
 .faq details{border-bottom:1px solid var(--line);padding:22px 0}.faq summary{cursor:pointer;font-weight:700;font-size:19px;list-style:none;display:flex;justify-content:space-between;gap:20px}
 .faq summary:after{content:"+";font-size:26px;line-height:1;transition:transform .3s}.faq details[open] summary:after{transform:rotate(45deg)}
 .faq p{color:var(--mut);margin:12px 0 0;max-width:70ch}
 /* final */
-.final{text-align:center}.final h2{font-size:clamp(40px,6vw,76px);max-width:16ch;margin:0 auto 26px}.final p{color:#a7a8ad;margin:0 0 34px;font-size:18px}
+.final{text-align:center}.final h2{font-size:clamp(40px,6vw,76px);max-width:16ch;margin:0 auto 26px}.final p{color:#d8d5ff;margin:0 0 34px;font-size:18px}.final .lg{width:min(260px,60vw);margin:0 auto 34px}
 footer{padding:34px 0;font-size:14px;color:var(--mut)}footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
 .fwa{position:fixed;right:18px;bottom:18px;z-index:30;width:60px;height:60px;border-radius:50%;background:var(--wa);display:grid;place-items:center;box-shadow:0 12px 28px -10px rgba(0,0,0,.45)}
 .fwa svg{width:30px;height:30px}
@@ -102,7 +102,7 @@ footer{padding:34px 0;font-size:14px;color:var(--mut)}footer .wrap{display:flex;
 </head>
 <body>
 <nav><div class="wrap">
-  <a class="logo" href="#"><i><svg viewBox="0 0 24 24"><path d="M5 20V4h3l8 10V4h3v16h-3L8 10v10z" fill="#c6ff3d"/></svg></i>Nexo Digital</a>
+  <a class="logo" href="#"><img src="nexo-simbolo.png" alt="">Nexo Digital</a>
   <div class="links"><a href="#exemplos">Exemplos</a><a href="#como">Como funciona</a><a href="#preco">Preço</a><a href="#duvidas">Dúvidas</a></div>
   <a class="btn btn-wa" href="https://wa.me/5584994514071?text=Oi!%20Vi%20o%20site%20da%20Nexo%20Digital%20e%20quero%20ver%20a%20pr%C3%A9via%20gr%C3%A1tis%20do%20site%20da%20minha%20empresa." target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.3 14.2c-.2.6-1.3 1.2-1.8 1.3-.5.1-1 .1-3.3-.8-2.8-1.1-4.5-3.9-4.7-4.1-.1-.2-1.1-1.5-1.1-2.9 0-1.4.7-2 1-2.3.3-.3.6-.3.8-.3h.6c.2 0 .4 0 .6.5l.9 2.1c.1.2.1.4 0 .5l-.3.5-.4.4c-.1.1-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.1 1 2.1 1.3 2.4 1.5.3.1.5.1.6-.1l.9-1c.2-.3.4-.2.6-.1l2 .9c.3.1.5.2.5.3.1.2.1.8-.1 1.4z"/></svg>Prévia grátis</a>
 </div></nav>
@@ -164,7 +164,7 @@ footer{padding:34px 0;font-size:14px;color:var(--mut)}footer .wrap{display:flex;
 <section id="preco" style="padding-top:0"><div class="wrap price">
   <div data-r><span class="eyb">Preço</span><h2 style="font-size:clamp(34px,4.6vw,56px);margin-top:14px">Um valor só. Sem mensalidade.</h2><p style="color:var(--mut);font-size:18px;max-width:40ch">Você paga uma vez e o site é seu. Sem taxa escondida, sem contrato de fidelidade.</p></div>
   <div class="card" data-r style="--d:.1s">
-    <span class="eyb" style="color:#a7a8ad">Site profissional</span>
+    <span class="eyb" style="color:#d8d5ff">Site profissional</span>
     <div class="v"><small>R$</small>250</div><div class="v-s">pagamento único</div>
     <ul><li>Prévia grátis antes de pagar</li><li>Sua logo, fotos e serviços</li><li>Avaliações do Google e mapa</li><li>Botão de WhatsApp em toda a página</li><li>Sem mensalidade</li></ul>
     <a class="btn btn-wa" href="https://wa.me/5584994514071?text=Oi!%20Vi%20o%20site%20da%20Nexo%20Digital%20e%20quero%20ver%20a%20pr%C3%A9via%20gr%C3%A1tis%20do%20site%20da%20minha%20empresa." target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.3 14.2c-.2.6-1.3 1.2-1.8 1.3-.5.1-1 .1-3.3-.8-2.8-1.1-4.5-3.9-4.7-4.1-.1-.2-1.1-1.5-1.1-2.9 0-1.4.7-2 1-2.3.3-.3.6-.3.8-.3h.6c.2 0 .4 0 .6.5l.9 2.1c.1.2.1.4 0 .5l-.3.5-.4.4c-.1.1-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.1 1 2.1 1.3 2.4 1.5.3.1.5.1.6-.1l.9-1c.2-.3.4-.2.6-.1l2 .9c.3.1.5.2.5.3.1.2.1.8-.1 1.4z"/></svg>Quero a minha prévia</a>
@@ -181,8 +181,8 @@ footer{padding:34px 0;font-size:14px;color:var(--mut)}footer .wrap{display:flex;
 </div></section>
 
 <section class="dark final"><div class="wrap">
-  <span class="eyb" data-r>Foz do Iguaçu</span>
-  <h2 data-r style="margin-top:18px">Veja hoje como ficaria o site da sua empresa.</h2>
+  <img class="lg" data-r src="nexo-logotipo.png" alt="Nexo Digital">
+  <h2 data-r>Veja hoje como ficaria o site da sua empresa.</h2>
   <p data-r>Mande o @ do seu Instagram no WhatsApp. A prévia é grátis.</p>
   <a class="btn btn-wa" data-r href="https://wa.me/5584994514071?text=Oi!%20Vi%20o%20site%20da%20Nexo%20Digital%20e%20quero%20ver%20a%20pr%C3%A9via%20gr%C3%A1tis%20do%20site%20da%20minha%20empresa." target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.3 14.2c-.2.6-1.3 1.2-1.8 1.3-.5.1-1 .1-3.3-.8-2.8-1.1-4.5-3.9-4.7-4.1-.1-.2-1.1-1.5-1.1-2.9 0-1.4.7-2 1-2.3.3-.3.6-.3.8-.3h.6c.2 0 .4 0 .6.5l.9 2.1c.1.2.1.4 0 .5l-.3.5-.4.4c-.1.1-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.1 1 2.1 1.3 2.4 1.5.3.1.5.1.6-.1l.9-1c.2-.3.4-.2.6-.1l2 .9c.3.1.5.2.5.3.1.2.1.8-.1 1.4z"/></svg>Chamar no WhatsApp</a>
 </div></section>
