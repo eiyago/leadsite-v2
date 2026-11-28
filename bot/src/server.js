@@ -3,7 +3,7 @@ import http from 'node:http';
 import { CFG, agoraBR } from './config.js';
 import { DB } from './db.js';
 import QRCode from 'qrcode';
-import { conectado, qrAtual } from './wa.js';
+import { conectado, qrAtual, enviar, jidDoNumero } from './wa.js';
 import * as F from './funil.js';
 import { enriquecer } from './places.js';
 import { linkPrevia } from './site-link.js';
@@ -134,6 +134,23 @@ export function iniciarServidor() {
       const ig = DB.leads().filter((l) => sem(l) && l.etapa === 'ig_fila').sort((a, b) => b.score - a.score).slice(0, 3);
       const wa = DB.leads().filter((l) => sem(l) && l.etapa === 'fila').sort((a, b) => (b.temp === 'quente') - (a.temp === 'quente') || b.score - a.score).slice(0, 3);
       return send([...conv, ...ig, ...wa].map((l) => ({ id: l.id, nome: l.nome, categoria: l.categoria, insta: handle(l), maps: `https://www.google.com/maps/place/?q=place_id:${l.id}&hl=pt-BR`, etapa: l.etapa })));
+    }
+    /* mensagem manual pelo WhatsApp do robô (pedido do usuário): {texto} → envia e registra na conversa */
+    if (req.method === 'POST' && /^\/lead\/[^/]+\/mensagem$/.test(url.pathname)) {
+      const id = decodeURIComponent(url.pathname.split('/')[2]);
+      let body = ''; req.on('data', (c) => { body += c; if (body.length > 2e4) req.destroy(); });
+      req.on('end', async () => {
+        try {
+          const { texto } = JSON.parse(body || '{}'); const l = DB.lead(id);
+          if (!l || !texto) return send({ ok: false, erro: 'lead ou texto ausente' }, 400);
+          const jid = l.jid || (l.wa ? await jidDoNumero(l.wa) : null);
+          if (!jid) return send({ ok: false, erro: 'sem WhatsApp' }, 400);
+          await enviar(jid, String(texto));
+          DB.log(id, 'eu', String(texto));
+          send({ ok: true });
+        } catch (e) { send({ ok: false, erro: e.message }, 500); }
+      });
+      return;
     }
     if (req.method === 'POST' && /^\/lead\/[^/]+\/midia$/.test(url.pathname)) {
       const id = decodeURIComponent(url.pathname.split('/')[2]);
