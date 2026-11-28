@@ -28,13 +28,13 @@ function tamanho(buf) {
   }
   return null;
 }
-async function baixar(url, destinoSemExt) {
+async function baixar(url, destinoSemExt, minimo = 2500) {
   const r = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0', Accept: 'image/avif,image/webp,image/*' } });
   if (!r.ok) throw new Error('HTTP ' + r.status);
   const tipo = (r.headers.get('content-type') || '').split(';')[0];
   const ext = TIPOS[tipo]; if (!ext) throw new Error('não é imagem: ' + tipo);
   const buf = Buffer.from(await r.arrayBuffer());
-  if (buf.length < 2500) throw new Error('imagem pequena demais');
+  if (buf.length < minimo) throw new Error('imagem pequena demais');
   if (buf.length > 4.5e6) throw new Error('imagem grande demais');
   const t = tamanho(buf);
   if (t && t.w / t.h >= 1.9) throw new Error('panorâmica 360°, descartada');
@@ -69,7 +69,7 @@ export async function salvarMidia(id, k = {}) {
   if (k.fotos?.length) for (const f of readdirSync(pasta)) if (/^f\d+\./.test(f)) unlinkSync(join(pasta, f));
 
   let logo = l.sx?.lg || '';
-  if (k.logo) { try { logo = urlDe(await baixar(k.logo, join(pasta, 'logo'))); } catch (e) { log(l.nome, 'logo:', e.message); } }
+  if (k.logo) { try { logo = urlDe(await baixar(k.logo, join(pasta, 'logo'), 1200)); } catch (e) { log(l.nome, 'logo:', e.message); } }
   const fotos = [];
   for (const [i, u] of (k.fotos || []).slice(0, 12).entries()) {
     try { fotos.push(urlDe(await baixar(u, join(pasta, 'f' + String(i + 1).padStart(2, '0'))))); } catch (e) { log(l.nome, 'foto', i + 1, e.message); }
