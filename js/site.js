@@ -108,6 +108,21 @@ var LSite = (function () {
     imobiliaria: ['editorial', 'clean', 'luxo', 'suico'], obras: ['urbano', 'clean', 'brutal', 'suico'], generico: ['clean', 'editorial', 'acolhedor', 'suico', 'retro'],
   };
 
+  /* arquitetura por segmento: cada grupo tem sua própria ordem de seções e títulos */
+  var SEG = { barbearia: 'beleza', salao: 'beleza', unhas: 'beleza', estetica: 'saude', clinica: 'saude', odonto: 'saude',
+    restaurante: 'comida', pizzaria: 'comida', hamburgueria: 'comida', cafe: 'comida', imobiliaria: 'imovel', academia: 'fitness',
+    oficina: 'servico', obras: 'servico', escritorio: 'servico', pet: 'servico', generico: 'servico' };
+  var ORDEM = {
+    beleza: ['hero', 'marquee', 'services', 'team', 'gallery', 'about', 'reviews', 'igFeed', 'perks', 'band', 'contact', 'faq'],
+    saude: ['hero', 'about', 'services', 'team', 'perks', 'reviews', 'gallery', 'band', 'contact', 'faq'],
+    comida: ['hero', 'marquee', 'services', 'gallery', 'about', 'reviews', 'igFeed', 'band', 'contact', 'faq'],
+    imovel: ['hero', 'services', 'gallery', 'about', 'team', 'reviews', 'perks', 'contact', 'faq'],
+    fitness: ['hero', 'marquee', 'services', 'perks', 'gallery', 'about', 'team', 'reviews', 'band', 'contact', 'faq'],
+    servico: ['hero', 'services', 'perks', 'about', 'team', 'gallery', 'reviews', 'band', 'contact', 'faq'],
+  };
+  var GAL_T = { beleza: ['Trabalhos', 'Trabalhos de {n}'], saude: ['Estrutura', 'Por dentro da {n}'], comida: ['Pratos e ambiente', 'Na mesa da {n}'],
+    imovel: ['Imóveis e ambientes', 'Ambientes da {n}'], fitness: ['Estrutura', 'Onde você treina'], servico: ['Galeria', 'Por dentro da {n}'] };
+
   function plan(d) {
     var nk = d.k || nicheOf(d.c); var N = LS_NICHES[nk];
     var r = rng(hash(cleanName(d.n) + '|' + (d.v || 0)));
@@ -124,12 +139,26 @@ var LSite = (function () {
     // fotos do próprio negócio têm prioridade; banco de imagens só completa quando faltam
     var photos = own.length >= 6 ? own.slice() : own.concat(stock);
     var svc = (d.sv && d.sv.length ? d.sv : shuffle(r, N.svc).slice(0, r() > .5 ? 6 : 4));
+    /* diferenciais: só fatos verificáveis (o que o próprio negócio informou ou o que vem do Google) */
+    var fatos = [];
+    if (d.pk && d.pk.length) fatos = d.pk.slice(0, 4);
+    else {
+      var igh = d.ig ? String(d.ig).replace(/^@|https?:\/\/(www\.)?instagram\.com\//g, '').replace(/\/$/, '') : '';
+      var dias = (d.h || []).filter(function (h) { return !/fechado/i.test(h); }).length;
+      if (d.r) fatos.push(['Nota ' + String(d.r).replace('.', ',') + ' no Google', (d.u ? d.u + ' avaliações de clientes reais' : 'Avaliada por clientes reais') + ' no Google.']);
+      if (d.sv && d.sv.some(function (x) { return x[2]; })) fatos.push(['Preços no site', 'Os valores dos serviços estão publicados aqui, sem surpresa.']);
+      if (dias) fatos.push(['Aberto ' + dias + ' dias por semana', 'Confira os horários completos na seção de contato.']);
+      if (d.a) fatos.push(['Onde fica', String(d.a).split(' - ')[0].split(',').slice(0, 2).join(',')]);
+      fatos.push(['Atendimento pelo WhatsApp', N.short + ' direto com a equipe, é só tocar no botão.']);
+      if (igh) fatos.push(['@' + igh, 'Novidades e trabalhos recentes no Instagram.']);
+      fatos = fatos.slice(0, 4);
+    }
     return {
       nk: nk, N: N, r: r, ci: ci, fill: fill, pal: pal, font: font, photos: photos, stock: stock, own: own.length,
       dir: dk, dirLabel: D.label,
       dark: lum(pal.bg) < .35,
       hero: d.hl2 || pick(r, D.heroes),
-      svcL: pick(r, D.svc),
+      svcL: (d.sv || []).some(function (x) { return x[3]; }) ? 'cards' : pick(r, D.svc),
       rad: pick(r, D.rad),
       btn: D.btn,
       aboutL: r() > .5,
@@ -138,7 +167,9 @@ var LSite = (function () {
       head: fill(d.hl || pick(r, N.heads)),
       sub: fill(d.sub || pick(r, N.subs)),
       svc: svc,
-      perks: shuffle(r, N.perks).slice(0, 4),
+      perks: fatos,
+      seg: SEG[nk] || 'servico',
+      svcReal: !!(d.sv && d.sv.length),
       aboutT: fill(pick(r, N.aboutT)),
       about: (d.ab ? [d.ab] : d.es ? [d.es].concat(N.about.slice(1)) : N.about).map(fill),
       ctaT: fill(pick(r, N.ctaT)),
@@ -423,6 +454,11 @@ var LSite = (function () {
     '.lb{position:fixed;inset:0;z-index:90;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;padding:30px;opacity:0;pointer-events:none;transition:opacity .4s;cursor:zoom-out}',
     '.lb.on{opacity:1;pointer-events:auto}.lb img{max-height:90vh;border-radius:8px;transform:scale(.94);transition:transform .5s}.lb.on img{transform:none}',
     '.credit{font-size:12px;color:var(--mut);margin-top:14px}',
+    '[data-ilu]{position:relative}[data-ilu]:after,.ilu-tag{content:"Imagem ilustrativa";position:absolute;left:10px;bottom:10px;z-index:4;font:600 10px/1 var(--fb);letter-spacing:.04em;padding:5px 9px;border-radius:99px;background:rgba(0,0,0,.55);color:#fff;pointer-events:none;backdrop-filter:blur(4px)}',
+    '.ilu-tag{left:auto;right:16px;bottom:16px}.band[data-ilu]:after{left:auto;right:16px;bottom:16px}',
+    '.team{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,260px));justify-content:center;gap:26px}.team figure:has(.t-ini){width:132px;aspect-ratio:1;border-radius:50%;margin:0 auto 16px;border:1px solid var(--line)}.team article{text-align:center}',
+    '.team figure{aspect-ratio:4/5;border-radius:var(--r);overflow:hidden;background:var(--card);display:grid;place-items:center;margin:0 0 14px}.team img{width:100%;height:100%;object-fit:cover}',
+    '.team .t-ini{font-family:var(--fd);font-size:44px;color:var(--ac);margin:0}.team h3{margin:0;font-family:var(--fd);font-size:22px}.team b{display:block;color:var(--ac);font-size:13px;margin-top:4px}.team article>span{display:block;color:var(--mut);font-size:14px}.team p{color:var(--mut);font-size:14px;margin:8px 0 0}',
     /* avaliações */
     '.rv-top{display:flex;align-items:flex-end;justify-content:space-between;gap:30px;flex-wrap:wrap;margin-bottom:50px}',
     '.score{display:flex;align-items:center;gap:22px}.score b{font-family:var(--fd);font-weight:var(--dw);font-size:calc(clamp(70px,9vw,120px)*var(--dsc));line-height:.9;color:var(--ac)}',
@@ -488,6 +524,9 @@ var LSite = (function () {
     var mapsQ = encodeURIComponent((d.n || '') + ' ' + (d.a || ''));
     var mapsUrl = d.m || 'https://www.google.com/maps/search/?api=1&query=' + mapsQ;
     var rating = d.r ? String(d.r).replace('.', ',') : '';
+    /* imagem de banco nunca se passa por foto real: ganha o selo "Imagem ilustrativa" */
+    var ownSet = {}; (d.ph || []).forEach(function (u) { ownSet[u] = 1; });
+    var ilu = function (u) { return ownSet[u] ? '' : ' data-ilu'; };
     var words = function (t) {
       var ws = String(t).split(/\s+/);
       return ws.map(function (w, i) { return '<span class="wl"><span class="w' + (i === ws.length - 1 && P.font.up === 0 ? ' hl' : '') + '" style="--i:' + i + '">' + esc(w) + '</span></span>'; }).join(' ');
@@ -547,7 +586,7 @@ var LSite = (function () {
       var price = s[2] ? '<span class="price">' + esc(s[2]) + '</span>' : '';
       var dl = 'style="--d:' + (i % 3) * .1 + 's"';
       if (P.svcL === 'list') return '<div class="row" data-r ' + dl + '><span class="num">0' + (i + 1) + '</span><h3>' + esc(s[0]) + '</h3><p>' + esc(s[1]) + '</p>' + (price || '<span class="price">' + ICON.arrow + '</span>') + '</div>';
-      if (P.svcL === 'cards') return '<article data-r ' + dl + '><figure><img src="' + ph[(i + 2) % ph.length] + '" alt="" loading="lazy"></figure><div class="bd"><h3>' + esc(s[0]) + '</h3><p>' + esc(s[1]) + '</p>' + price + '</div></article>';
+      if (P.svcL === 'cards') { var si = s[3] || ph[(i + 2) % ph.length]; return '<article data-r ' + dl + '><figure' + (s[3] ? '' : ilu(si)) + '><img src="' + esc(si) + '" alt="' + esc(s[0]) + '" loading="lazy"></figure><div class="bd"><h3>' + esc(s[0]) + '</h3><p>' + esc(s[1]) + '</p>' + price + '</div></article>'; }
       return '<article class="glow" data-r ' + dl + '><span class="big">0' + (i + 1) + '</span><h3>' + esc(s[0]) + '</h3><p>' + esc(s[1]) + '</p>' + price + '</article>';
     }).join('');
     var services = '<section id="servicos"><div class="wrap">' + sh(N.svcT, P.svcL === 'list' ? ({ 'Cardápio': 'Nosso cardápio', 'Modalidades': 'Nossas modalidades', 'Especialidades': 'Nossas especialidades', 'Áreas de atuação': 'Como podemos ajudar', 'O que oferecemos': 'O que oferecemos' }[N.svcT] || 'Nossos ' + N.svcT.toLowerCase()) : 'O que fazemos de melhor') +
@@ -562,16 +601,16 @@ var LSite = (function () {
     var openDays = (d.h || []).filter(function (h) { return !/fechado/i.test(h); }).length;
     if (d.r) stats = '<div class="stats" data-r><div><b data-count="' + d.r + '">0</b><span>Nota no Google</span></div><div><b data-count="' + (d.u || 0) + '">0</b><span>Avaliações</span></div>' +
       (openDays ? '<div><b data-count="' + openDays + '">0</b><span>Dias por semana</span></div>' : '') + '</div>';
-    var about = '<section id="sobre"><div class="wrap about' + (P.aboutL ? ' rev' : '') + '"><figure data-r="clip"><img src="' + ph[1 % ph.length] + '" alt="' + esc(d.n) + '" loading="lazy" data-px=".07"></figure>' +
+    var about = '<section id="sobre"><div class="wrap about' + (P.aboutL ? ' rev' : '') + '"><figure data-r="clip"' + ilu(ph[1 % ph.length]) + '><img src="' + ph[1 % ph.length] + '" alt="' + esc(d.n) + '" loading="lazy" data-px=".07"></figure>' +
       '<div><div data-r><span class="eyb">Sobre</span><h2 class="disp">' + esc(P.aboutT) + '</h2></div>' + P.about.map(function (t, i) { return '<p data-r style="--d:' + (.1 + i * .1) + 's">' + esc(t) + '</p>'; }).join('') + stats +
       '<div class="cta" data-r>' + btnWA(N.short, 'sm') + '</div></div></div></section>';
 
     /* galeria */
     var igOn = !!d.ig && P.own >= 7; // fotos próprias de sobra: galeria (ambiente) + vitrine do Instagram sem repetir
     var gp = ph.slice(0, igOn ? 4 : (P.own >= 8 ? 8 : 6));
-    var gallery = '<section id="galeria" class="alt"><div class="wrap">' + sh('Galeria', P.own >= 3 ? 'Por dentro da ' + d.n : 'Ambiente e rotina') + '<div class="gal g' + gp.length + '">' +
-      gp.map(function (u, i) { return '<figure data-r="clip" style="--d:' + (i % 4) * .08 + 's"><img src="' + u + '" alt="' + esc(d.n) + ' — foto ' + (i + 1) + '" loading="lazy"></figure>'; }).join('') + '</div>' +
-      (P.own ? '<p class="credit">Fotos reais de ' + esc(d.n) + '</p>' : '') + '</div></section>';
+    var gallery = '<section id="galeria" class="alt"><div class="wrap">' + sh(P.own >= 3 ? GAL_T[P.seg][0] : 'Inspiração', P.own >= 3 ? GAL_T[P.seg][1].replace('{n}', d.n) : 'Referências do segmento') + '<div class="gal g' + gp.length + '">' +
+      gp.map(function (u, i) { return '<figure data-r="clip"' + ilu(u) + ' style="--d:' + (i % 4) * .08 + 's"><img src="' + u + '" alt="' + esc(d.n) + ' — foto ' + (i + 1) + '" loading="lazy"></figure>'; }).join('') + '</div>' +
+      (P.own ? '<p class="credit">Fotos reais de ' + esc(d.n) + (gp.some(function (u) { return !ownSet[u]; }) ? ' · as marcadas como ilustrativas são referências do segmento' : '') + '</p>' : '<p class="credit">Imagens ilustrativas do segmento — serão trocadas pelas fotos reais de ' + esc(d.n) + '.</p>') + '</div></section>';
 
     /* vitrine do Instagram com as fotos reais do perfil (só quando há fotos próprias suficientes) */
     var igH = d.ig ? String(d.ig).replace(/^@|https?:\/\/(www\.)?instagram\.com\//g, '').replace(/\/$/, '') : '';
@@ -582,6 +621,15 @@ var LSite = (function () {
         '<a class="btn btn-gh sm" href="https://instagram.com/' + esc(igH) + '" target="_blank" rel="noopener">' + ICON.ig + '<span>Seguir no Instagram</span></a></div>' +
         '<div class="igf-g" style="grid-template-columns:repeat(' + igPh.length + ',1fr)">' + igPh.map(function (u, i) { return '<a href="https://instagram.com/' + esc(igH) + '" target="_blank" rel="noopener" data-r="clip" style="--d:' + (i % 6) * .06 + 's"><img src="' + u + '" alt="Post de @' + esc(igH) + '" loading="lazy"></a>'; }).join('') + '</div></div></section>';
     }
+
+    /* equipe: só profissionais reais, com nome; sem dados verificados a seção não aparece */
+    var eq = (d.eq || []).filter(function (x) { return x && x.n; });
+    var team = eq.length ? '<section id="equipe" class="alt"><div class="wrap">' + sh('Equipe', eq.length > 1 ? 'Quem cuida de você' : 'Quem vai te atender') + '<div class="team">' +
+      eq.map(function (x, i) {
+        var ini = String(x.n).split(/\s+/).slice(0, 2).map(function (w) { return w.charAt(0); }).join('').toUpperCase();
+        return '<article data-r style="--d:' + (i % 4) * .08 + 's"><figure>' + (x.f ? '<img src="' + esc(x.f) + '" alt="' + esc(x.n) + '" loading="lazy">' : '<span class="t-ini">' + esc(ini) + '</span>') + '</figure>' +
+          '<h3>' + esc(x.n) + '</h3>' + (x.c ? '<b>' + esc(x.c) + '</b>' : '') + (x.e ? '<span>' + esc(x.e) + '</span>' : '') + (x.b ? '<p>' + esc(x.b) + '</p>' : '') + '</article>';
+      }).join('') + '</div></div></section>' : '';
 
     /* avaliações (somente reais) */
     var reviews = '';
@@ -596,7 +644,7 @@ var LSite = (function () {
     }
 
     /* chamada final */
-    var band = '<section class="band"><div class="bgi"><img src="' + ph[2 % ph.length] + '" alt="" loading="lazy" data-px=".12"></div><div class="wrap">' +
+    var band = '<section class="band"' + ilu(ph[2 % ph.length]) + '><div class="bgi"><img src="' + ph[2 % ph.length] + '" alt="" loading="lazy" data-px=".12"></div><div class="wrap">' +
       '<span class="eyb" data-r>' + esc(N.short) + ' pelo WhatsApp</span><h2 class="disp" data-r>' + esc(P.ctaT) + '</h2><p data-r>Resposta rápida, sem complicação. É só tocar no botão e mandar uma mensagem.</p><div data-r>' + btnWA() + '</div></div></section>';
 
     /* contato */
@@ -626,11 +674,14 @@ var LSite = (function () {
     var introNome = String(d.n || '').split('').map(function (c, k) { return c === ' ' ? ' ' : '<i style="--k:' + k + '">' + esc(c) + '</i>'; }).join('');
     var intro = '<div class="intro" aria-hidden="true"><div class="ib"><div class="il">' + (d.lg ? '<img src="' + esc(d.lg) + '" alt="">' : brandMark(P, d)) + '</div><div class="in2">' + introNome + '</div><div class="ibar"></div></div></div>';
     var hz = hero.lastIndexOf('</header>'); if (hz > 0) hero = hero.slice(0, hz) + '<div class="aur"><b></b><b></b><b></b></div>' + hero.slice(hz);
+    if (!ownSet[ph[0]] && P.hero !== 'poster') hero = hero.replace('</header>', '<span class="ilu-tag">Imagem ilustrativa</span></header>');
+    var SECS = { hero: hero, marquee: marquee, services: services, team: team, gallery: gallery, about: about, reviews: reviews, igFeed: igFeed, perks: perks, band: band, contact: contact, faq: faq };
+    if (eq.length) nav.splice(1, 0, ['equipe', 'Equipe']);
     var body = intro + '<div class="grain"></div><div class="cur"></div><div class="cur2"></div><a class="skip" href="#servicos">Pular para o conteúdo</a><div class="prog"></div><nav class="nav" aria-label="Principal"><div class="wrap"><a class="logo" href="#">' + monoHtml + '<span>' + esc(d.n) + '</span></a><div class="links">' +
       nav.filter(function (x) { return x[0] !== 'avaliacoes' || d.r; }).map(function (x) { return '<a href="#' + x[0] + '">' + esc(x[1]) + '</a>'; }).join('') + '</div>' + btnWA('WhatsApp', 'sm') +
       '<button class="burger" aria-label="Menu"><i></i><i></i></button></div></nav>' +
       '<div class="mnav">' + nav.map(function (x) { return '<a href="#' + x[0] + '">' + esc(x[1]) + '</a>'; }).join('') + '<div style="margin-top:20px">' + btnWA() + '</div></div>' +
-      '<main>' + hero + marquee + services + (r() > .5 ? perks + about : about + perks) + gallery + reviews + igFeed + band + contact + faq + '</main>' + footer +
+      '<main>' + ORDEM[P.seg].map(function (k) { return SECS[k] || ''; }).join('') + '</main>' + footer +
       '<a class="fwa" href="' + wa + '" target="_blank" rel="noopener" aria-label="WhatsApp">' + ICON.wa + '<span>Fale com a gente</span></a>' + pv + '<div class="lb"><img alt=""></div>';
 
     var title = d.n + ' — ' + (d.c || '') + (P.ci ? ' em ' + P.ci : '');
@@ -778,5 +829,27 @@ var LSite = (function () {
   /* imagens usadas (para embutir no site efetivado) */
   function images(d) { var P = plan(d); return P.photos.slice(0, 6); }
 
-  return { page: page, boot: boot, plan: plan, DIRS: DIRS, NICHE_DIRS: NICHE_DIRS, nicheOf: nicheOf, images: images, NICHES: LS_NICHES };
+  /* ---------- validação antes de publicar: aponta o que falta e o que não é real ---------- */
+  function validar(d) {
+    var P = plan(d), out = [];
+    var add = function (nivel, campo, msg) { out.push({ nivel: nivel, campo: campo, msg: msg }); };
+    var tel = String(d.t || '').replace(/\D/g, '');
+    if (tel.length < 10) add('bloqueia', 'telefone', 'WhatsApp/telefone inválido: o botão principal não funcionaria.');
+    if (!d.lg) add('aviso', 'logo', 'Sem logo oficial: o site usa um monograma com as iniciais. Cole a logo real se existir.');
+    var own = (d.ph || []).filter(Boolean);
+    if (!own.length) add('aviso', 'fotos', 'Nenhuma foto real: todas as imagens são ilustrativas (marcadas no site).');
+    else if (own.length < 4) add('aviso', 'fotos', 'Só ' + own.length + ' foto(s) real(is): o restante aparece como imagem ilustrativa.');
+    var vistos = {}, dup = 0; own.forEach(function (u) { var k = String(u).split('?')[0]; if (vistos[k]) dup++; vistos[k] = 1; });
+    if (dup) add('aviso', 'fotos', dup + ' foto(s) repetida(s) na lista.');
+    if (!P.svcReal) add('bloqueia', 'servicos', 'Serviços são exemplos do segmento, não confirmados com o negócio. Edite a lista antes de efetivar.');
+    if (!d.hl) add('aviso', 'textos', 'Título principal é o padrão do segmento. Escreva um que seja da empresa.');
+    if (!d.ab && !d.es) add('aviso', 'textos', 'Texto "Sobre" é genérico. Escreva com a história/diferencial real.');
+    (d.eq || []).forEach(function (x, i) { if (x && !x.n) add('bloqueia', 'equipe', 'Profissional ' + (i + 1) + ' sem nome.'); if (x && x.n && !x.f) add('aviso', 'equipe', x.n + ' sem foto: aparece só com as iniciais.'); });
+    if (!d.a) add('aviso', 'contato', 'Sem endereço: o mapa vai buscar só pelo nome.');
+    if (d.r && !(d.rv && d.rv.length)) add('aviso', 'avaliacoes', 'Nota do Google sem avaliações escritas.');
+    own.concat(d.lg ? [d.lg] : []).forEach(function (u) { if (!/^(https?:|data:|img\/)/.test(u)) add('bloqueia', 'fotos', 'Endereço de imagem inválido: ' + String(u).slice(0, 60)); });
+    return out;
+  }
+
+  return { page: page, boot: boot, plan: plan, validar: validar, DIRS: DIRS, NICHE_DIRS: NICHE_DIRS, nicheOf: nicheOf, images: images, NICHES: LS_NICHES };
 })();

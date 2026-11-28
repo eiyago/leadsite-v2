@@ -19,19 +19,51 @@ function leadDoForm() {
   l.fotos = fotos.length ? fotos : base.fotos;
   const lg = fd.logo.trim();
   l.sx = { ...(base.sx || {}) }; if (lg) l.sx.lg = lg; else delete l.sx.lg;
+  /* personalização: só o que foi preenchido entra; vazio remove (volta ao comportamento seguro) */
+  const linhas = (t) => String(t || '').split('\n').map((x) => x.split('|').map((y) => y.trim())).filter((x) => x[0]);
+  const setOu = (k, v) => { if (v && (!Array.isArray(v) || v.length)) l.sx[k] = v; else delete l.sx[k]; };
+  setOu('hl', fd.hl.trim()); setOu('sub', fd.sub.trim());
+  setOu('ac', fd.usaCor ? fd.cor : '');
+  setOu('sv', linhas(fd.servicos).slice(0, 10).map((x) => [x[0], x[1] || '', x[2] || '', /^https?:\/\//.test(x[3] || '') ? x[3] : '']));
+  setOu('eq', linhas(fd.equipe).slice(0, 8).map((x) => ({ n: x[0], c: x[1] || '', e: x[2] || '', f: /^https?:\/\/|^img\//.test(x[3] || '') ? x[3] : '' })));
+  setOu('pk', linhas(fd.diferenciais).slice(0, 4).map((x) => [x[0], x[1] || '']));
   return l;
+}
+/* carrega um lead do CRM no painel (com tudo que o banco de mídia coletou) */
+function preencherDoLead(l) {
+  const f = $('#gerarForm'); G.lead = l; const x = l.sx || {};
+  const v = { nome: l.nome, categoria: l.categoria, telefone: l.telefone, cidade: l.cidade, endereco: l.endereco, rating: l.rating || '', reviews: l.reviews || '', resumo: l.resumo || '',
+    fotos: (l.fotos || []).join('\n'), logo: x.lg || '', instagram: x.ig ? '@' + x.ig : '', hl: x.hl || '', sub: x.sub || '',
+    servicos: (x.sv || []).map((s) => s.filter((y, i) => i < 3 || y).join(' | ')).join('\n'),
+    equipe: (x.eq || []).map((e) => [e.n, e.c, e.e, e.f].join(' | ').replace(/( \| )+$/, '')).join('\n'),
+    diferenciais: (x.pk || []).map((d) => d.join(' | ')).join('\n') };
+  Object.entries(v).forEach(([k, val]) => { if (f.elements[k]) f.elements[k].value = val ?? ''; });
+  f.elements.usaCor.checked = !!x.ac; if (x.ac) f.elements.cor.value = x.ac;
+  gerarPreview();
+}
+/* checagem antes de publicar: mostra o que bloqueia e o que é aviso */
+function checarSite(d) {
+  const r = LSite.validar(d), b = r.filter((x) => x.nivel === 'bloqueia');
+  $('#gerarCheck').innerHTML = (r.length ? r : [{ nivel: 'ok', msg: 'Tudo certo: pronto para efetivar.' }])
+    .map((x) => `<div class="gc ${x.nivel === 'bloqueia' ? 'b' : x.nivel === 'ok' ? 'ok' : 'a'}">${x.nivel === 'bloqueia' ? '⛔' : x.nivel === 'ok' ? '✅' : '⚠️'} ${esc(x.msg)}</div>`).join('');
+  return b;
 }
 let gerarT = null;
 function gerarPreview() {
   clearTimeout(gerarT);
   gerarT = setTimeout(() => {
     const f = $('#gerarForm'); if (!f.elements.nome.value.trim() || !f.elements.categoria.value.trim()) return;
-    $('#gerarFrame').srcdoc = LSite.page(LV.siteData(S.cfg, leadDoForm()), { exported: false });
+    const d = LV.siteData(S.cfg, leadDoForm());
+    $('#gerarFrame').srcdoc = LSite.page(d, { exported: false }); checarSite(d);
   }, 400);
 }
 function bindGerar() {
   const f = $('#gerarForm'); if (!f) return;
   f.addEventListener('input', gerarPreview);
+  const sel = $('#gerarLead');
+  const opts = () => { sel.innerHTML = '<option value="">— lead novo —</option>' + Object.values(S.crm).filter((l) => l.nome).sort((a, b) => a.nome.localeCompare(b.nome)).map((l) => `<option value="${esc(l.id)}">${esc(l.nome)}${l.sx?.lg || l.fotos?.length ? ' 📷' : ''}</option>`).join(''); };
+  sel.onfocus = opts; opts();
+  sel.onchange = () => { const l = S.crm[sel.value]; if (l) preencherDoLead(JSON.parse(JSON.stringify(l))); };
   $('#gerarLimpar').onclick = () => { f.reset(); G.lead = null; $('#gerarOut').innerHTML = ''; $('#gerarFrame').srcdoc = ''; };
   $('#gerarBuscar').onclick = async () => {
     const q = f.elements.busca.value.trim(); if (!q) return toast('Digite o nome e a cidade do negócio');
@@ -54,6 +86,8 @@ function bindGerar() {
   $('#gerarEfetivar').onclick = async () => {
     if (!f.reportValidity()) return;
     const l0 = leadDoForm();
+    const bloq = checarSite(LV.siteData(S.cfg, l0));
+    if (bloq.length) return toast('Antes de efetivar: ' + bloq[0].msg);
     if (!confirm(`Efetivar o site da ${l0.nome}? Use depois que o cliente pagar: o link sai sem a faixa de prévia.`)) return;
     const btn = $('#gerarEfetivar'); btn.disabled = true; btn.textContent = 'Efetivando…';
     try {

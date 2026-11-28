@@ -80,6 +80,20 @@ export async function salvarMidia(id, k = {}) {
   if (k.slogan) sx.hl = String(k.slogan).slice(0, 80);
   if (k.sub) sx.sub = String(k.sub).slice(0, 180);
   if (k.instagram) sx.ig = String(k.instagram).replace(/^@/, '');
+  /* equipe real: [{nome, cargo, especialidade, bio, foto}] — foto baixada para o banco, nunca inventada */
+  if (k.equipe?.length) {
+    sx.eq = [];
+    for (const [i, p] of k.equipe.slice(0, 8).entries()) {
+      if (!p?.nome) continue;
+      let f = '';
+      if (p.foto) { try { f = urlDe(await baixar(p.foto, join(pasta, 'eq' + (i + 1)))); } catch (e) { log(l.nome, 'equipe foto', i + 1, e.message); } }
+      sx.eq.push({ n: String(p.nome).slice(0, 60), c: p.cargo ? String(p.cargo).slice(0, 60) : '', e: p.especialidade ? String(p.especialidade).slice(0, 80) : '', b: p.bio ? String(p.bio).slice(0, 200) : '', f });
+    }
+  }
+  if (k.diferenciais?.length) sx.pk = k.diferenciais.slice(0, 4).map((x) => [String(x[0]).slice(0, 50), String(x[1] || '').slice(0, 140)]);
+  if (k.sobre) sx.ab = String(k.sobre).slice(0, 600);
+  if (/^#[0-9a-f]{6}$/i.test(k.cor || '')) sx.ac = k.cor;
+  if (k.servicos?.length && k.servicos.some((s) => s[3])) sx.sv = sx.sv.map((s, i) => [...s, k.servicos[i]?.[3] || '']); // foto por serviço (url real)
   if (k.nicho) sx.k = String(k.nicho); // corrige o tipo de negócio quando a categoria do Google engana (ex.: podologia cadastrada como manicure)
   const up = { id, sx, midiaEm: new Date().toISOString(), linkPrevia: null };
   if (fotos.length) up.fotos = fotos;

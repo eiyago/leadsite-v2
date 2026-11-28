@@ -50,6 +50,7 @@
       <div class="gerar">
         <form class="panel gerar-form" id="gerarForm">
           <h2 style="margin:0 0 4px">Gerador de sites</h2>
+          <label class="f"><span>Editar um lead do CRM (carrega tudo que já foi coletado)</span><select id="gerarLead"><option value="">— lead novo —</option></select></label>
           <p class="muted small" style="margin:0 0 12px">Para leads que você achou por fora. Sai como <b>prévia</b> (faixa e botão da sua empresa no rodapé); quando pagar, clique em <b>Efetivar</b> e mande o link oficial.</p>
           <div class="row"><label class="f grow2"><span>Buscar no Google (preenche tudo)</span><input name="busca" placeholder="Barbearia do Zé, Foz do Iguaçu"></label><button type="button" class="btn" id="gerarBuscar" style="align-self:flex-end">🔎 Buscar</button></div>
           <div class="row">
@@ -68,7 +69,18 @@
           </div>
           <label class="f"><span>Logo (endereço da imagem)</span><input name="logo" placeholder="https://… (clique com o botão direito na logo → Copiar endereço da imagem)"></label>
           <label class="f"><span>Fotos reais (uma por linha)</span><textarea name="fotos" rows="3" placeholder="https://…jpg"></textarea></label>
-          <label class="f"><span>Sobre o negócio (opcional)</span><textarea name="resumo" rows="2"></textarea></label>
+          <label class="f"><span>Sobre o negócio (texto real, com a história/diferencial)</span><textarea name="resumo" rows="2"></textarea></label>
+          <details class="perso" open><summary>🎨 Personalização (só dados reais — o que ficar vazio não aparece ou fica marcado como exemplo)</summary>
+            <div class="row">
+              <label class="f grow2"><span>Título principal (frase da empresa)</span><input name="hl" maxlength="80"></label>
+              <label class="f"><span>Cor da marca</span><input name="cor" type="color" value="#000000"><small class="muted"><label class="chk"><input type="checkbox" name="usaCor"> usar</label></small></label>
+            </div>
+            <label class="f"><span>Subtítulo</span><input name="sub" maxlength="180"></label>
+            <label class="f"><span>Serviços reais — um por linha: Nome | descrição | preço | foto (opcional)</span><textarea name="servicos" rows="4" placeholder="Corte masculino | Tesoura e máquina, acabamento na navalha | R$ 40"></textarea></label>
+            <label class="f"><span>Equipe — um por linha: Nome | cargo | especialidade | foto (opcional)</span><textarea name="equipe" rows="3" placeholder="Só profissionais confirmados pelo negócio"></textarea></label>
+            <label class="f"><span>Diferenciais reais — um por linha: Título | texto</span><textarea name="diferenciais" rows="3" placeholder="Vazio = usa só fatos do Google (nota, horários, endereço)"></textarea></label>
+          </details>
+          <div id="gerarCheck" class="g-check"></div>
           <div class="row actions"><button class="btn primary" id="gerarBtn">✨ Gerar prévia</button><button type="button" class="btn ok" id="gerarEfetivar" title="Cliente pagou: gera o site oficial, sem a faixa de prévia">✅ Efetivar site</button><button type="button" class="btn" id="gerarLimpar">Limpar</button></div>
           <div id="gerarOut"></div>
         </form>
