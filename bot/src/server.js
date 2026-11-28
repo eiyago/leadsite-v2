@@ -8,7 +8,7 @@ import * as F from './funil.js';
 import { enriquecer } from './places.js';
 import { linkPrevia } from './site-link.js';
 import { salvarMidia } from './midia.js';
-import { cotaHoje, teste, abordarAgora, leadManual, cidadeAtual } from './robo.js';
+import { cotaHoje, teste, abordarAgora, leadManual, cidadeAtual, minerarBrasil } from './robo.js';
 
 const PAGINA_QR = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Conectar WhatsApp — Robô LeadSite</title>
 <style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0f172a;color:#e2e8f0;font:16px system-ui;text-align:center}
@@ -160,6 +160,12 @@ export function iniciarServidor() {
         salvarMidia(id, k).then((r) => send({ ok: true, ...r })).catch((e) => send({ ok: false, erro: e.message }, 400));
       });
       return;
+    }
+    if (req.method === 'POST' && url.pathname === '/minerar') {
+      const cidades = (url.searchParams.get('cidades') || '').split(';').map((x) => x.trim()).filter(Boolean);
+      const rodadas = Math.min(3, Number(url.searchParams.get('rodadas')) || 1);
+      if (!cidades.length) return send({ ok: false, erro: 'informe ?cidades=A, UF;B, UF' }, 400);
+      minerarBrasil(cidades, rodadas); return send({ ok: true, cidades, rodadas });
     }
     if (req.method === 'POST' && url.pathname === '/pausar') { DB.setMeta('pausado', true); return send({ ok: true }); }
     if (req.method === 'POST' && url.pathname === '/retomar') { DB.setMeta('pausado', false); return send({ ok: true }); }

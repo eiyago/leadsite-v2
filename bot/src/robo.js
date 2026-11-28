@@ -54,8 +54,8 @@ const temInsta = (l) => /instagram\.com\//i.test(l.site || '');
 const encaixa = (l) => ['quente', 'morno'].includes(l.temp) && l.siteTipo !== 'tem' && (l.mobile || temInsta(l));
 const canalDe = (l) => (l.mobile ? 'whatsapp' : 'instagram');
 
-async function minerar() {
-  const cidade = cidadeAtual();
+async function minerar(cidadeForcada) {
+  const cidade = cidadeForcada || cidadeAtual();
   const cat = CFG.categorias[DB.meta.catIdx % CFG.categorias.length];
   DB.setMeta('catIdx', DB.meta.catIdx + 1);
   log(`⛏️  Minerando "${cat}" em ${cidade}…`);
@@ -505,4 +505,12 @@ export function ligar() {
     .forEach((l, i) => setTimeout(() => pedirEncaminhar(l.id), i * (180 + Math.random() * 120) * 1000));
   if (modoSemIA()) log('ℹ️  MODO SEM IA: mensagens de modelo; quem responder vai direto para você.');
   log(`🤖 Robô ligado — ${cidadeAtual()} · cota de hoje: ${cotaHoje()} abordagens · janela ${CFG.horaInicio}h–${CFG.horaFim}h`);
+}
+
+/* mineração extra em várias cidades do Brasil (pedido do usuário: liberdade geográfica) */
+export async function minerarBrasil(cidades, rodadas = 1) {
+  let n = 0;
+  for (const c of cidades) for (let i = 0; i < rodadas; i++) { try { n += (await minerar(c)) || 0; } catch (e) { log("[brasil] " + c + ": " + e.message); } }
+  log("🇧🇷 Mineração Brasil concluída em " + cidades.length + " cidades");
+  return n;
 }

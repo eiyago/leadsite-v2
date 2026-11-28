@@ -17,6 +17,9 @@ function score(l) {
   s += l.rating >= 4.5 ? 15 : l.rating >= 4 ? 8 : 0;
   s += l.reviews >= 100 ? 20 : l.reviews >= 30 ? 12 : l.reviews >= 10 ? 6 : 0;
   s += l.mobile ? 20 : l.telDigits ? 6 : -25;
+  // negócio pequeno, atendido pelo dono (WhatsApp celular + poucas avaliações reais): converte melhor
+  if (l.mobile && l.reviews >= 3 && l.reviews <= 80) s += 8;
+  if (l.reviews > 400) s -= 5;
   s = Math.max(0, Math.min(100, s));
   return { score: s, temp: s >= 70 ? 'quente' : s >= 45 ? 'morno' : 'frio' };
 }
