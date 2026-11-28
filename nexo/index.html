@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Manrope:wght@400;500;600;700&display=swap">
 <style>
-:root{--ink:#0f1013;--paper:#f3f1ea;--mut:#5d5f66;--line:rgba(15,16,19,.12);--lime:#3628f9;--brand:#3628f9;--brand2:#2a1fd1;--tint:#dcd9ff;--wa:#12803f;--r:18px;--ease:cubic-bezier(.2,.8,.2,1)}
+:root{--ink:#f4f4f7;--paper:#06060a;--mut:#9b9ca6;--line:rgba(255,255,255,.1);--card:#101018;--lime:#3628f9;--brand:#3628f9;--brand2:#2a1fd1;--tint:rgba(54,40,249,.55);--brandL:#8c84ff;--wa:#12803f;--r:18px;--ease:cubic-bezier(.2,.8,.2,1)}
 *{box-sizing:border-box}html{scroll-behavior:smooth}
 body{margin:0;background:var(--paper);color:var(--ink);font:400 17px/1.6 Manrope,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
 a{color:inherit}img{max-width:100%;display:block}
@@ -24,7 +24,7 @@ h1,h2,h3{font-family:Fraunces,Georgia,serif;font-weight:700;letter-spacing:-.02e
 .btn-wa{background:var(--wa);color:#fff}.btn-wa:hover{transform:translateY(-2px);background:#0e6b34}
 .btn-gh{border:1.5px solid var(--ink)}.btn-gh:hover{background:var(--brand);border-color:var(--brand);color:#fff}
 /* nav */
-nav{position:sticky;top:0;z-index:20;background:rgba(243,241,234,.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+nav{position:sticky;top:0;z-index:20;background:rgba(6,6,10,.72);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
 nav .wrap{display:flex;align-items:center;justify-content:space-between;height:68px}
 .logo{display:flex;align-items:center;gap:10px;font-weight:700;text-decoration:none;font-size:18px}
 .logo img{width:34px;height:34px;border-radius:9px}
@@ -32,15 +32,15 @@ nav .wrap{display:flex;align-items:center;justify-content:space-between;height:6
 nav .links{display:flex;gap:28px;font-size:15px}nav .links a{text-decoration:none;color:var(--mut)}nav .links a:hover{color:var(--ink)}
 nav .btn{padding:11px 18px;font-size:14px}
 /* hero */
-.hero{padding:72px 0 40px;overflow:hidden}
+.hero{position:relative;padding:72px 0 40px;overflow:hidden}.hero .wrap{position:relative;z-index:1}.aur{position:absolute;inset:-20% -10% auto;height:120%;pointer-events:none;filter:blur(80px);opacity:.75}.aur b{position:absolute;border-radius:50%;background:#3628f9;width:42vw;height:42vw;left:45%;top:-10%;animation:au 16s ease-in-out infinite alternate}.aur b+b{background:#7b2ff7;width:30vw;height:30vw;left:5%;top:30%;opacity:.55;animation-duration:21s}.aur b+b+b{background:#1fb6ff;width:22vw;height:22vw;left:70%;top:50%;opacity:.35;animation-duration:25s}@keyframes au{to{transform:translate(-12vw,10vh) scale(1.15)}}@keyframes flt{0%,100%{transform:translateY(0) rotate(2.5deg)}50%{transform:translateY(-14px) rotate(1deg)}}.spot{position:relative;overflow:hidden}.spot:before{content:"";position:absolute;inset:0;background:radial-gradient(400px circle at var(--mx,50%) var(--my,50%),rgba(140,132,255,.18),transparent 45%);opacity:0;transition:opacity .4s;pointer-events:none}.spot:hover:before{opacity:1}h1,h2{text-wrap:balance}
 .hero .wrap{display:grid;grid-template-columns:1.15fr .85fr;gap:56px;align-items:center}
 .hero h1{font-size:clamp(42px,6.2vw,80px)}
-.hero h1 em{font-style:italic;font-weight:500;color:var(--brand);background:linear-gradient(transparent 64%,var(--tint) 64%,var(--tint) 94%,transparent 94%)}
+.hero h1 em{font-style:italic;font-weight:500;color:var(--brandL);background:linear-gradient(transparent 64%,var(--tint) 64%,var(--tint) 94%,transparent 94%)}
 .hero p.lead{font-size:20px;color:var(--mut);max-width:34ch;margin:22px 0 32px}
 .hero .cta{display:flex;flex-wrap:wrap;gap:12px}
 .hero .note{margin-top:18px;font-size:14px;color:var(--mut)}
-.phone{position:relative;justify-self:center;width:min(330px,80vw);aspect-ratio:9/19;border-radius:44px;background:var(--ink);padding:12px;box-shadow:0 40px 80px -30px rgba(15,16,19,.45);transform:rotate(3deg)}
-.phone iframe{width:100%;height:100%;border:0;border-radius:34px;background:#fff}
+.phone{position:relative;justify-self:center;width:min(330px,80vw);aspect-ratio:9/19;border-radius:44px;background:#1a1a22;padding:12px;border:1px solid rgba(255,255,255,.14);box-shadow:0 60px 120px -40px rgba(54,40,249,.7);animation:flt 7s ease-in-out infinite}
+.phone iframe{width:100%;height:100%;border:0;border-radius:34px;background:#fff;pointer-events:none}
 .phone .tag{position:absolute;left:-26px;bottom:60px;background:var(--brand);color:#fff;font-weight:700;font-size:13px;padding:10px 14px;border-radius:12px;transform:rotate(-6deg);box-shadow:0 10px 24px -12px rgba(0,0,0,.4)}
 /* faixa */
 .strip{border-block:1px solid var(--line);padding:18px 0;overflow:hidden;white-space:nowrap}
@@ -54,29 +54,29 @@ section{padding:96px 0}
 .prob div{padding:28px 28px 8px 0}.prob div+div{padding-left:28px;border-left:1px solid var(--line)}
 .prob b{font-family:Fraunces,serif;font-size:44px;display:block;line-height:1}.prob h3{font-size:24px;margin:18px 0 10px}.prob p{color:var(--mut);margin:0}
 /* exemplos */
-.dark{background:var(--brand);color:#fff}.dark .eyb,.dark .sh p{color:#d8d5ff}
+.dark{background:radial-gradient(120% 80% at 50% 0%,#1d1590 0%,#0b0930 55%,#06060a 100%);color:#fff}.dark .eyb,.dark .sh p{color:#d8d5ff}
 .demos{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
-.demo{display:block;text-decoration:none;border-radius:var(--r);overflow:hidden;background:var(--brand2);transition:transform .5s var(--ease)}
+.demo{display:block;border-radius:var(--r);overflow:hidden;background:var(--card);border:1px solid rgba(255,255,255,.1);transition:transform .5s var(--ease),border-color .4s}.demo:hover{border-color:rgba(140,132,255,.7)}
 .demo:hover{transform:translateY(-6px)}
 .demo .fr{aspect-ratio:3/4;position:relative;overflow:hidden;background:#fff}
-.demo iframe{position:absolute;top:0;left:0;width:300%;height:300%;transform:scale(.3334);transform-origin:0 0;border:0;pointer-events:none}
+.demo iframe{position:absolute;top:0;left:0;width:300%;height:300%;transform:scale(.3334);transform-origin:0 0;border:0;pointer-events:none}.demo .fr:after,.phone:after{content:"";position:absolute;inset:0;z-index:2}
 .demo .bd{padding:18px 20px;display:flex;justify-content:space-between;align-items:center}
 .demo b{font-family:Fraunces,serif;font-size:20px}.demo span{font-size:13px;color:#d8d5ff}
 .disc{margin-top:22px;font-size:13px;color:#d8d5ff}
 /* inclui */
 .inc{display:grid;grid-template-columns:1fr 1fr;gap:0 56px}
 .inc li{list-style:none;padding:20px 0;border-bottom:1px solid var(--line);display:grid;grid-template-columns:28px 1fr;gap:14px}
-.inc li:before{content:"";width:12px;height:12px;border-radius:50%;background:var(--ink);margin-top:8px;box-shadow:0 0 0 4px var(--tint)}
+.inc li:before{content:"";width:12px;height:12px;border-radius:50%;background:var(--brandL);margin-top:8px;box-shadow:0 0 0 4px var(--tint)}
 .inc h3{font-size:20px;font-family:Manrope,sans-serif;font-weight:700;letter-spacing:0}.inc p{margin:4px 0 0;color:var(--mut);font-size:15px}
 .inc ul{margin:0;padding:0}
 /* passos */
 .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;counter-reset:s}
-.step{border:1px solid var(--line);border-radius:var(--r);padding:30px;background:#fbfaf6}
+.step{border:1px solid var(--line);border-radius:var(--r);padding:30px;background:var(--card);transition:border-color .4s,transform .5s var(--ease)}.step:hover{border-color:rgba(140,132,255,.6);transform:translateY(-4px)}
 .step:before{counter-increment:s;content:"0" counter(s);font-family:Fraunces,serif;font-size:56px;line-height:1;display:block;margin-bottom:22px}
 .step h3{font-size:24px}.step p{color:var(--mut);margin:10px 0 0}
 /* preço */
 .price{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center}
-.card{border-radius:28px;background:var(--brand);color:#fff;padding:44px}
+.card{position:relative;overflow:hidden;border-radius:28px;background:var(--brand);color:#fff;padding:44px}
 .card .v{font-family:Fraunces,serif;font-size:96px;line-height:1;margin:14px 0 6px}.card .v small{font-size:32px;vertical-align:top;margin-right:6px}
 .card .v-s{color:#d8d5ff}.card ul{padding:0;margin:28px 0;list-style:none}.card li{padding:10px 0;border-top:1px solid rgba(255,255,255,.18)}.card li:before{content:"✓";color:#fff;margin-right:12px;font-weight:700}
 .card .btn{width:100%;justify-content:center}
@@ -92,7 +92,7 @@ footer{padding:34px 0;font-size:14px;color:var(--mut)}footer .wrap{display:flex;
 /* entrada */
 [data-r]{opacity:0;transform:translateY(24px);transition:opacity .9s var(--ease),transform .9s var(--ease);transition-delay:var(--d,0s)}
 [data-r].in{opacity:1;transform:none}
-@media (prefers-reduced-motion:reduce){[data-r]{opacity:1;transform:none}.strip .tr{animation:none}}
+@media (prefers-reduced-motion:reduce){[data-r]{opacity:1;transform:none}.strip .tr,.aur b,.phone{animation:none}}
 @media (max-width:900px){
  .hero .wrap,.price,.inc{grid-template-columns:1fr}.hero{padding-top:44px}.phone{transform:none;margin-top:10px}.phone .tag{left:-8px}
  .prob,.demos,.steps{grid-template-columns:1fr}.prob div+div{padding-left:0;border-left:0;border-top:1px solid var(--line)}
@@ -107,7 +107,7 @@ footer{padding:34px 0;font-size:14px;color:var(--mut)}footer .wrap{display:flex;
   <a class="btn btn-wa" href="https://wa.me/5584994514071?text=Oi!%20Vi%20o%20site%20da%20Nexo%20Digital%20e%20quero%20ver%20a%20pr%C3%A9via%20gr%C3%A1tis%20do%20site%20da%20minha%20empresa." target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.3 14.2c-.2.6-1.3 1.2-1.8 1.3-.5.1-1 .1-3.3-.8-2.8-1.1-4.5-3.9-4.7-4.1-.1-.2-1.1-1.5-1.1-2.9 0-1.4.7-2 1-2.3.3-.3.6-.3.8-.3h.6c.2 0 .4 0 .6.5l.9 2.1c.1.2.1.4 0 .5l-.3.5-.4.4c-.1.1-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.1 1 2.1 1.3 2.4 1.5.3.1.5.1.6-.1l.9-1c.2-.3.4-.2.6-.1l2 .9c.3.1.5.2.5.3.1.2.1.8-.1 1.4z"/></svg>Prévia grátis</a>
 </div></nav>
 
-<header class="hero"><div class="wrap">
+<header class="hero"><div class="aur" aria-hidden="true"><b></b><b></b><b></b></div><div class="wrap">
   <div>
     <span class="eyb" data-r>Sites para empresas de Foz do Iguaçu</span>
     <h1 data-r style="--d:.08s;margin-top:18px">Quem procura você no Google precisa <em>te achar</em>.</h1>
@@ -115,7 +115,7 @@ footer{padding:34px 0;font-size:14px;color:var(--mut)}footer .wrap{display:flex;
     <div class="cta" data-r style="--d:.24s"><a class="btn btn-wa" href="https://wa.me/5584994514071?text=Oi!%20Vi%20o%20site%20da%20Nexo%20Digital%20e%20quero%20ver%20a%20pr%C3%A9via%20gr%C3%A1tis%20do%20site%20da%20minha%20empresa." target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.3 14.2c-.2.6-1.3 1.2-1.8 1.3-.5.1-1 .1-3.3-.8-2.8-1.1-4.5-3.9-4.7-4.1-.1-.2-1.1-1.5-1.1-2.9 0-1.4.7-2 1-2.3.3-.3.6-.3.8-.3h.6c.2 0 .4 0 .6.5l.9 2.1c.1.2.1.4 0 .5l-.3.5-.4.4c-.1.1-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.1 1 2.1 1.3 2.4 1.5.3.1.5.1.6-.1l.9-1c.2-.3.4-.2.6-.1l2 .9c.3.1.5.2.5.3.1.2.1.8-.1 1.4z"/></svg>Quero ver a prévia do meu site</a><a class="btn btn-gh" href="#exemplos">Ver exemplos</a></div>
     <p class="note" data-r style="--d:.3s">R$250, pagamento único · sem mensalidade · prévia grátis</p>
   </div>
-  <div class="phone" data-r style="--d:.2s"><iframe src="../demo.html?s=zVZDBihNBEIZfpahzIy4k6M5tVwkIKkFBDyGHSnc5Ke2e6nT3jLLiwyx7CCt4Ei9e-8WkM67EYxXF93_1f8UBO7ymtGNKQvBKHXtFg_Z83WbBDld6A07hRT9SPY4G1m_QYMEOny4uLxfLi8XjJxdokLBDNJixw9f8ReG59FLIo8HP2OFy-f_13mOHb3mEgfv604qC1QBjgCyFgXKW0GDjrp21leOgQy6JikwKjuA8pAPOhaHeg0Ikl-qdwmFk4KEk7ilohkiJYPfwWzaQyddfnA1YX38MYikDQ-JcaEw0FM7gGFZ686h5TNhtNrOI1RA9l1bXS-3VwActmiExSaNymqQeNRugibxQPbYUYAgUW6W4NRu81tIUHcP7PZV8FSMafOaFhxawp0DgJHHRBgxzpNjGutMHxjrpUBQ4QNTRagYnlNHgO7X1O1BMOhEQxFTvJyH495IkIAVKJ87WYPw0_8YBAg-ZvDhyjAbX1FPgllF_D2L1lLpiKTqXadmP_sS52iWGVG-juJPQYSR_GDkBRUrs9_pXeDbpU70tclLlj2dijq04SbjdfvsD" title="Exemplo de site" loading="lazy"></iframe><span class="tag">Exemplo do nosso padrão</span></div>
+  <div class="phone" data-r style="--d:.2s" aria-hidden="true"><iframe src="../demo.html?s=zVZDBihNBEIZfpahzIy4k6M5tVwkIKkFBDyGHSnc5Ke2e6nT3jLLiwyx7CCt4Ei9e-8WkM67EYxXF93_1f8UBO7ymtGNKQvBKHXtFg_Z83WbBDld6A07hRT9SPY4G1m_QYMEOny4uLxfLi8XjJxdokLBDNJixw9f8ReG59FLIo8HP2OFy-f_13mOHb3mEgfv604qC1QBjgCyFgXKW0GDjrp21leOgQy6JikwKjuA8pAPOhaHeg0Ikl-qdwmFk4KEk7ilohkiJYPfwWzaQyddfnA1YX38MYikDQ-JcaEw0FM7gGFZ686h5TNhtNrOI1RA9l1bXS-3VwActmiExSaNymqQeNRugibxQPbYUYAgUW6W4NRu81tIUHcP7PZV8FSMafOaFhxawp0DgJHHRBgxzpNjGutMHxjrpUBQ4QNTRagYnlNHgO7X1O1BMOhEQxFTvJyH495IkIAVKJ87WYPw0_8YBAg-ZvDhyjAbX1FPgllF_D2L1lLpiKTqXadmP_sS52iWGVG-juJPQYSR_GDkBRUrs9_pXeDbpU70tclLlj2dijq04SbjdfvsD" title="Exemplo de site" loading="lazy"></iframe><span class="tag">Exemplo do nosso padrão</span></div>
 </div></header>
 
 <div class="strip" aria-hidden="true"><div class="tr"><span>Barbearias</span><span>Salões</span><span>Clínicas e estética</span><span>Restaurantes</span><span>Hamburguerias</span><span>Imobiliárias</span><span>Academias</span><span>Pet shops</span><span>Oficinas</span><span>Barbearias</span><span>Salões</span><span>Clínicas e estética</span><span>Restaurantes</span><span>Hamburguerias</span><span>Imobiliárias</span><span>Academias</span><span>Pet shops</span><span>Oficinas</span></div></div>
@@ -132,9 +132,9 @@ footer{padding:34px 0;font-size:14px;color:var(--mut)}footer .wrap{display:flex;
 <section class="dark" id="exemplos"><div class="wrap">
   <div class="sh" data-r><span class="eyb">Exemplos</span><h2>Cada negócio com a sua cara.</h2><p>Nada de modelo igual pra todo mundo: cores, fontes e layout mudam conforme o seu segmento e a sua marca.</p></div>
   <div class="demos">
-    <a class="demo" data-r href="../demo.html?s=zVZDBihNBEIZfpahzIy4k6M5tVwkIKkFBDyGHSnc5Ke2e6nT3jLLiwyx7CCt4Ei9e-8WkM67EYxXF93_1f8UBO7ymtGNKQvBKHXtFg_Z83WbBDld6A07hRT9SPY4G1m_QYMEOny4uLxfLi8XjJxdokLBDNJixw9f8ReG59FLIo8HP2OFy-f_13mOHb3mEgfv604qC1QBjgCyFgXKW0GDjrp21leOgQy6JikwKjuA8pAPOhaHeg0Ikl-qdwmFk4KEk7ilohkiJYPfwWzaQyddfnA1YX38MYikDQ-JcaEw0FM7gGFZ686h5TNhtNrOI1RA9l1bXS-3VwActmiExSaNymqQeNRugibxQPbYUYAgUW6W4NRu81tIUHcP7PZV8FSMafOaFhxawp0DgJHHRBgxzpNjGutMHxjrpUBQ4QNTRagYnlNHgO7X1O1BMOhEQxFTvJyH495IkIAVKJ87WYPw0_8YBAg-ZvDhyjAbX1FPgllF_D2L1lLpiKTqXadmP_sS52iWGVG-juJPQYSR_GDkBRUrs9_pXeDbpU70tclLlj2dijq04SbjdfvsD" target="_blank" rel="noopener"><div class="fr"><iframe src="../demo.html?s=zVZDBihNBEIZfpahzIy4k6M5tVwkIKkFBDyGHSnc5Ke2e6nT3jLLiwyx7CCt4Ei9e-8WkM67EYxXF93_1f8UBO7ymtGNKQvBKHXtFg_Z83WbBDld6A07hRT9SPY4G1m_QYMEOny4uLxfLi8XjJxdokLBDNJixw9f8ReG59FLIo8HP2OFy-f_13mOHb3mEgfv604qC1QBjgCyFgXKW0GDjrp21leOgQy6JikwKjuA8pAPOhaHeg0Ikl-qdwmFk4KEk7ilohkiJYPfwWzaQyddfnA1YX38MYikDQ-JcaEw0FM7gGFZ686h5TNhtNrOI1RA9l1bXS-3VwActmiExSaNymqQeNRugibxQPbYUYAgUW6W4NRu81tIUHcP7PZV8FSMafOaFhxawp0DgJHHRBgxzpNjGutMHxjrpUBQ4QNTRagYnlNHgO7X1O1BMOhEQxFTvJyH495IkIAVKJ87WYPw0_8YBAg-ZvDhyjAbX1FPgllF_D2L1lLpiKTqXadmP_sS52iWGVG-juJPQYSR_GDkBRUrs9_pXeDbpU70tclLlj2dijq04SbjdfvsD" loading="lazy" tabindex="-1" title="Barbearia"></iframe></div><div class="bd"><b>Barbearia</b><span>Ver exemplo →</span></div></a>
-    <a class="demo" data-r style="--d:.1s" href="../demo.html?s=zVY9NSgNBEIWvUrx1IwYSNL0L8QcXStCFi5BF2V1MGnqmhunOGBQPIy4GFy49QV9MRkSSbb363s8rGlgsY_lqgmO6VS9RYeAOr15IUi6fOTgetQCLK30hr3RT7bgMO0OrexhkWJxP5_PpbDI9PZvAgGEBgwSLO9krXYQqZI4weIbFbHb8vY2wuNxL3UYdU1PIQi13TO6vy-i1e4LFwyh5qbVJueMceiXPdJhxDCY6GEFS0_GAk9G4h12vserUiQ-1NFkTDJbsmZJ0fSiDktOavCTXhTKUDyWhnqN2MMDGrLGopPH8y1IrUelxyzkt2nY0ikGaLOS2XDP50EnWf67nGLgM5VvSWOtatYoCM7bpmZK6wJEapra8V6HhX27z9gM" target="_blank" rel="noopener"><div class="fr"><iframe src="../demo.html?s=zVY9NSgNBEIWvUrx1IwYSNL0L8QcXStCFi5BF2V1MGnqmhunOGBQPIy4GFy49QV9MRkSSbb363s8rGlgsY_lqgmO6VS9RYeAOr15IUi6fOTgetQCLK30hr3RT7bgMO0OrexhkWJxP5_PpbDI9PZvAgGEBgwSLO9krXYQqZI4weIbFbHb8vY2wuNxL3UYdU1PIQi13TO6vy-i1e4LFwyh5qbVJueMceiXPdJhxDCY6GEFS0_GAk9G4h12vserUiQ-1NFkTDJbsmZJ0fSiDktOavCTXhTKUDyWhnqN2MMDGrLGopPH8y1IrUelxyzkt2nY0ikGaLOS2XDP50EnWf67nGLgM5VvSWOtatYoCM7bpmZK6wJEapra8V6HhX27z9gM" loading="lazy" tabindex="-1" title="Clínica"></iframe></div><div class="bd"><b>Clínica e estética</b><span>Ver exemplo →</span></div></a>
-    <a class="demo" data-r style="--d:.2s" href="../demo.html?s=zZZDNSgNBEIRfpanzIgYSNHPzFwUjQREPIYfOTrM7sLs9zk8MEd_F4CEPsi8mqwgGj939VTVVb-hgcJ5DJYFmaqVRFChhcMPtKocqS3A8rBwMrnVLVum2ytzvc0HzBxRIMDgdT6fjyWh8fDJCAYYBCkQY3MtG6dJVLnGDAq8wmEwO6bqBwdVGWt8oWaHokpDnwBQkJs6BuySDXV7B4HG4Wmm1iylwcmsly_T3zT9tJKGGu7LWTr6nlg6DHA3ua5jFAhccbL_zbmhhHjjpIPZB-r1GitL6INR_UNt_DgSWxQJzsc4qdUrPNad45j0KPLWU9CULCSmVjZNuCCVWflV3WnLjttzvf6xm7JmEag39LjiN39zy_Qs" target="_blank" rel="noopener"><div class="fr"><iframe src="../demo.html?s=zZZDNSgNBEIRfpanzIgYSNHPzFwUjQREPIYfOTrM7sLs9zk8MEd_F4CEPsi8mqwgGj939VTVVb-hgcJ5DJYFmaqVRFChhcMPtKocqS3A8rBwMrnVLVum2ytzvc0HzBxRIMDgdT6fjyWh8fDJCAYYBCkQY3MtG6dJVLnGDAq8wmEwO6bqBwdVGWt8oWaHokpDnwBQkJs6BuySDXV7B4HG4Wmm1iylwcmsly_T3zT9tJKGGu7LWTr6nlg6DHA3ua5jFAhccbL_zbmhhHjjpIPZB-r1GitL6INR_UNt_DgSWxQJzsc4qdUrPNad45j0KPLWU9CULCSmVjZNuCCVWflV3WnLjttzvf6xm7JmEag39LjiN39zy_Qs" loading="lazy" tabindex="-1" title="Restaurante"></iframe></div><div class="bd"><b>Restaurante</b><span>Ver exemplo →</span></div></a>
+    <div class="demo spot" data-r><div class="fr"><iframe src="../demo.html?s=zVZDBihNBEIZfpahzIy4k6M5tVwkIKkFBDyGHSnc5Ke2e6nT3jLLiwyx7CCt4Ei9e-8WkM67EYxXF93_1f8UBO7ymtGNKQvBKHXtFg_Z83WbBDld6A07hRT9SPY4G1m_QYMEOny4uLxfLi8XjJxdokLBDNJixw9f8ReG59FLIo8HP2OFy-f_13mOHb3mEgfv604qC1QBjgCyFgXKW0GDjrp21leOgQy6JikwKjuA8pAPOhaHeg0Ikl-qdwmFk4KEk7ilohkiJYPfwWzaQyddfnA1YX38MYikDQ-JcaEw0FM7gGFZ686h5TNhtNrOI1RA9l1bXS-3VwActmiExSaNymqQeNRugibxQPbYUYAgUW6W4NRu81tIUHcP7PZV8FSMafOaFhxawp0DgJHHRBgxzpNjGutMHxjrpUBQ4QNTRagYnlNHgO7X1O1BMOhEQxFTvJyH495IkIAVKJ87WYPw0_8YBAg-ZvDhyjAbX1FPgllF_D2L1lLpiKTqXadmP_sS52iWGVG-juJPQYSR_GDkBRUrs9_pXeDbpU70tclLlj2dijq04SbjdfvsD" loading="lazy" tabindex="-1" title="Barbearia"></iframe></div><div class="bd"><b>Barbearia</b><span>Exemplo</span></div></div>
+    <div class="demo spot" data-r style="--d:.1s"><div class="fr"><iframe src="../demo.html?s=zVY9NSgNBEIWvUrx1IwYSNL0L8QcXStCFi5BF2V1MGnqmhunOGBQPIy4GFy49QV9MRkSSbb363s8rGlgsY_lqgmO6VS9RYeAOr15IUi6fOTgetQCLK30hr3RT7bgMO0OrexhkWJxP5_PpbDI9PZvAgGEBgwSLO9krXYQqZI4weIbFbHb8vY2wuNxL3UYdU1PIQi13TO6vy-i1e4LFwyh5qbVJueMceiXPdJhxDCY6GEFS0_GAk9G4h12vserUiQ-1NFkTDJbsmZJ0fSiDktOavCTXhTKUDyWhnqN2MMDGrLGopPH8y1IrUelxyzkt2nY0ikGaLOS2XDP50EnWf67nGLgM5VvSWOtatYoCM7bpmZK6wJEapra8V6HhX27z9gM" loading="lazy" tabindex="-1" title="Clínica"></iframe></div><div class="bd"><b>Clínica e estética</b><span>Exemplo</span></div></div>
+    <div class="demo spot" data-r style="--d:.2s"><div class="fr"><iframe src="../demo.html?s=zZZDNSgNBEIRfpanzIgYSNHPzFwUjQREPIYfOTrM7sLs9zk8MEd_F4CEPsi8mqwgGj939VTVVb-hgcJ5DJYFmaqVRFChhcMPtKocqS3A8rBwMrnVLVum2ytzvc0HzBxRIMDgdT6fjyWh8fDJCAYYBCkQY3MtG6dJVLnGDAq8wmEwO6bqBwdVGWt8oWaHokpDnwBQkJs6BuySDXV7B4HG4Wmm1iylwcmsly_T3zT9tJKGGu7LWTr6nlg6DHA3ua5jFAhccbL_zbmhhHjjpIPZB-r1GitL6INR_UNt_DgSWxQJzsc4qdUrPNad45j0KPLWU9CULCSmVjZNuCCVWflV3WnLjttzvf6xm7JmEag39LjiN39zy_Qs" loading="lazy" tabindex="-1" title="Restaurante"></iframe></div><div class="bd"><b>Restaurante</b><span>Exemplo</span></div></div>
   </div>
   <p class="disc" data-r>Sites demonstrativos com negócios fictícios. No seu, entram a sua logo, as suas fotos e os seus serviços.</p>
 </div></section>
@@ -155,9 +155,9 @@ footer{padding:34px 0;font-size:14px;color:var(--mut)}footer .wrap{display:flex;
 <section id="como" style="padding-top:0"><div class="wrap">
   <div class="sh" data-r><span class="eyb">Como funciona</span><h2>Você vê pronto antes de pagar.</h2></div>
   <div class="steps">
-    <div class="step" data-r><h3>Manda o @ ou o nome</h3><p>Pelo WhatsApp, mande o Instagram ou o nome da sua empresa no Google.</p></div>
-    <div class="step" data-r style="--d:.1s"><h3>Receba a prévia grátis</h3><p>Montamos o site com o seu material e te mandamos o link pra ver no celular.</p></div>
-    <div class="step" data-r style="--d:.2s"><h3>Aprovou, vai ao ar</h3><p>Ajustamos o que você quiser e publicamos. Pagamento só depois de aprovar.</p></div>
+    <div class="step spot" data-r><h3>Manda o @ ou o nome</h3><p>Pelo WhatsApp, mande o Instagram ou o nome da sua empresa no Google.</p></div>
+    <div class="step spot" data-r style="--d:.1s"><h3>Receba a prévia grátis</h3><p>Montamos o site com o seu material e te mandamos o link pra ver no celular.</p></div>
+    <div class="step spot" data-r style="--d:.2s"><h3>Aprovou, vai ao ar</h3><p>Ajustamos o que você quiser e publicamos. Pagamento só depois de aprovar.</p></div>
   </div>
 </div></section>
 
@@ -181,7 +181,7 @@ footer{padding:34px 0;font-size:14px;color:var(--mut)}footer .wrap{display:flex;
 </div></section>
 
 <section class="dark final"><div class="wrap">
-  <img class="lg" data-r src="nexo-logotipo.png" alt="Nexo Digital">
+  <img class="lg" data-r src="nexo-logotipo-branco.png" alt="Nexo Digital">
   <h2 data-r>Veja hoje como ficaria o site da sua empresa.</h2>
   <p data-r>Mande o @ do seu Instagram no WhatsApp. A prévia é grátis.</p>
   <a class="btn btn-wa" data-r href="https://wa.me/5584994514071?text=Oi!%20Vi%20o%20site%20da%20Nexo%20Digital%20e%20quero%20ver%20a%20pr%C3%A9via%20gr%C3%A1tis%20do%20site%20da%20minha%20empresa." target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.3 14.2c-.2.6-1.3 1.2-1.8 1.3-.5.1-1 .1-3.3-.8-2.8-1.1-4.5-3.9-4.7-4.1-.1-.2-1.1-1.5-1.1-2.9 0-1.4.7-2 1-2.3.3-.3.6-.3.8-.3h.6c.2 0 .4 0 .6.5l.9 2.1c.1.2.1.4 0 .5l-.3.5-.4.4c-.1.1-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.1 1 2.1 1.3 2.4 1.5.3.1.5.1.6-.1l.9-1c.2-.3.4-.2.6-.1l2 .9c.3.1.5.2.5.3.1.2.1.8-.1 1.4z"/></svg>Chamar no WhatsApp</a>
@@ -197,6 +197,25 @@ document.getElementById('ano').textContent = new Date().getFullYear();
   if (!('IntersectionObserver' in window)) { els.forEach(function (e) { e.classList.add('in'); }); return; }
   var io = new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }); }, { rootMargin: '0px 0px -8% 0px' });
   els.forEach(function (e) { io.observe(e); });
+})();
+(function () {
+  var reduz = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  [].slice.call(document.querySelectorAll(".spot")).forEach(function (c) { c.addEventListener("pointermove", function (e) { var r = c.getBoundingClientRect(); c.style.setProperty("--mx", e.clientX - r.left + "px"); c.style.setProperty("--my", e.clientY - r.top + "px"); }); });
+  if (reduz) return;
+  /* cada prévia rola sozinha, devagar, de cima a baixo e volta (sem abrir outro site) */
+  [].slice.call(document.querySelectorAll(".phone iframe, .demo iframe")).forEach(function (f, i) {
+    f.addEventListener("load", function () {
+      var w = f.contentWindow, y = 0, dir = 1, pausa = 0;
+      try { w.document.documentElement.style.scrollBehavior = "auto"; } catch (e) { return; }
+      setTimeout(function passo() {
+        try {
+          var max = w.document.documentElement.scrollHeight - w.innerHeight;
+          if (pausa > 0) pausa--; else { y += dir * 1.6; if (y >= max) { y = max; dir = -1; pausa = 90; } if (y <= 0) { y = 0; dir = 1; pausa = 90; } w.scrollTo(0, y); }
+        } catch (e) { return; }
+        requestAnimationFrame(passo);
+      }, 2600 + i * 700);
+    });
+  });
 })();
 </script>
 </body>
