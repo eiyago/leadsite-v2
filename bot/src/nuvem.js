@@ -17,7 +17,7 @@ const linha = (l) => ({
 async function post(tabela, linhas) {
   const r = await fetch(`${URL_}/rest/v1/${tabela}?on_conflict=${tabela === 'meta' ? 'chave' : 'id'}`, {
     method: 'POST',
-    headers: { apikey: KEY, Authorization: `Bearer ${KEY}`, 'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates,return=minimal' },
+    headers: { apikey: KEY, ...(KEY.startsWith('eyJ') ? { Authorization: `Bearer ${KEY}` } : {}), 'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates,return=minimal' },
     body: JSON.stringify(linhas),
   });
   if (!r.ok) throw new Error(`${tabela}: ${r.status} ${(await r.text()).slice(0, 200)}`);
