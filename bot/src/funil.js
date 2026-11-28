@@ -4,7 +4,14 @@
    Cada etapa tem várias versões e pequenas variações: nenhuma mensagem sai igual à outra. */
 import { CFG } from './config.js';
 
-const pick = (a) => a[Math.floor(Math.random() * a.length)];
+/* sorteio sem repetir: evita as variações usadas por último em cada lista (mensagens sempre diferentes) */
+const usados = new WeakMap();
+const pick = (a) => {
+  const rec = usados.get(a) || []; const livres = a.map((_, i) => i).filter((i) => !rec.includes(i));
+  const i = (livres.length ? livres : a.map((_, k) => k))[Math.floor(Math.random() * (livres.length || a.length))];
+  rec.push(i); while (rec.length > Math.max(1, Math.floor(a.length / 2))) rec.shift(); usados.set(a, rec);
+  return a[i];
+};
 const money = (v) => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0 });
 const nome1 = () => String(CFG.meuNome || 'Yago').split(' ')[0];
 const emp = () => CFG.empresa || 'Nexo Digital';
