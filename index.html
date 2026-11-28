@@ -6,35 +6,31 @@
   <title>LeadSite V2 — Máquina de Conversão</title>
   <meta name="robots" content="noindex">
   <link rel="stylesheet" href="css/app.css">
-  <link rel="stylesheet" href="css/jarvis.css">
   <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
 </head>
 <body>
   <header class="top">
     <div class="brand"><span class="logo">L2</span><div><b>LeadSite</b> <small>V2</small></div></div>
     <nav class="tabs" id="nav">
-      <a href="#/inicio" data-view="inicio">🛰️ JARVIS</a>
+      <a href="#/metas" data-view="metas">📊 Vendas &amp; Meta</a>
       <a href="#/buscar" data-view="buscar">Buscar leads</a>
       <a href="#/pipeline" data-view="pipeline">Pipeline <span class="pill" id="navFollow" hidden></span></a>
       <a href="#/gerar" data-view="gerar">🧩 Gerar site</a>
       <a href="#/insta" data-view="insta">📸 Instagram</a>
-      <a href="#/metas" data-view="metas">Metas</a>
       <a href="#/config" data-view="config">Configurações</a>
     </nav>
     <div class="kpis" id="kpis"></div>
   </header>
 
   <main>
-    <!-- JARVIS (página inicial) -->
-    <section class="view" id="view-inicio" hidden></section>
-
     <!-- METAS -->
     <section class="view" id="view-metas" hidden>
       <div class="panel metas">
         <div class="metas-top">
-          <div><h2 style="margin:0">Metas</h2><p class="muted" style="margin:4px 0 0" id="metaDesc"></p></div>
+          <div><h2 style="margin:0">Vendas &amp; Meta</h2><p class="muted" style="margin:4px 0 0" id="metaDesc"></p></div>
           <button class="btn" id="btnNovaMeta">+ Nova meta</button>
         </div>
+        <div class="vendas-kpi" id="vendasKpi"></div>
         <div class="meta-big" id="metaBig"></div>
         <form class="row meta-form" id="metaForm" hidden>
           <label class="f"><span>O que conta para a meta</span><select name="metrica"><option value="recebido">Faturamento recebido (pagamento confirmado)</option><option value="fechado">Vendas fechadas (valor)</option><option value="sites">Quantidade de sites vendidos</option></select></label>
@@ -169,14 +165,6 @@
           <label class="f"><span>Follow-up após (dias)</span><input name="followupDias" type="number" min="1"></label>
         </div>
 
-        <h2>J.A.R.V.I.S.</h2>
-        <label class="chk" style="color:var(--ink)"><input type="checkbox" id="jvFalar"> Saudação falada ao iniciar</label>
-        <div class="row actions" style="margin-top:4px">
-          <button type="button" class="btn" id="jvCfgBtn">Voz, microfone, cidade do clima e IA…</button>
-          <a class="btn" href="jarvis.html" target="_blank" rel="noopener">Abrir app JARVIS</a>
-          <a class="btn" href="jarvis-app-windows.zip" download>⬇ Baixar app JARVIS para Windows</a>
-        </div>
-
         <h2>Automação</h2>
         <label class="f"><span>Webhook (n8n, Make, Zapier ou Google Apps Script)</span>
           <input name="webhook" placeholder="https://...">
@@ -254,7 +242,6 @@
   <script src="js/site.js"></script>
   <script src="js/core.js"></script>
   <script src="js/jarvis-core.js"></script>
-  <script src="js/jarvis-ui.js"></script>
   <script src="js/gerar-insta.js"></script>
   <script src="js/app.js"></script>
 </body>

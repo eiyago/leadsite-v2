@@ -46,10 +46,9 @@ function renderKpis() {
 
 /* ---------------- rotas ---------------- */
 function route() {
-  const v = (location.hash.match(/#\/(\w+)/) || [])[1] || 'inicio';
+  const v = (location.hash.match(/#\/(\w+)/) || [])[1] || 'metas';
   $$('.view').forEach((s) => (s.hidden = s.id !== 'view-' + v));
   $$('#nav a').forEach((a) => a.classList.toggle('on', a.dataset.view === v));
-  if (v === 'inicio' && !route._jv) { route._jv = true; JVUI.montar($('#view-inicio'), { nav: (d) => (location.hash = '#/' + d), modo: 'site' }); }
   if (v === 'metas') renderMetas();
   if (v === 'insta') renderInsta();
   if (v === 'pipeline') renderPipeline();
@@ -714,6 +713,20 @@ function renderMetas() {
   const fmt = (v) => JV.fmtMeta(m, v);
   $('#metaDesc').textContent = `Meta ${JV.NOME_PERIODO[m.periodo]} · medindo ${JV.NOME_METRICA[m.metrica]}`;
   const marcos = [25, 50, 75, 100];
+  /* resumo de vendas (dados reais do CRM) + ritmo necessário para bater a meta */
+  const all = Object.values(S.crm);
+  const ganhos = all.filter((l) => l.stage === 'convertido');
+  const abord = all.filter((l) => l.stage !== 'base').length;
+  const negoc = all.filter((l) => l.stage === 'agendado' || l.stage === 'followup').length;
+  const recebido = all.filter((l) => l.pagamento === 'confirmado').reduce((a, l) => a + Number(l.valorPago ?? l.valor ?? 0), 0);
+  const fechado = ganhos.reduce((a, l) => a + Number(l.valor || S.cfg.preco || 0), 0);
+  const diasRest = Math.max(1, Math.ceil((m.fim - Date.now()) / 864e5));
+  const falta = Math.max(0, m.valor - m.atual);
+  const ritmo = falta ? `${fmt(Math.ceil(falta / diasRest))}/dia nos próximos ${diasRest} dia${diasRest > 1 ? 's' : ''}` : 'Meta batida 🏆';
+  $('#vendasKpi').innerHTML = [
+    ['Sites vendidos', ganhos.length], ['Fechado', money(fechado)], ['Recebido', money(recebido)],
+    ['Em negociação', negoc], ['Abordados', abord], ['Conversão', (abord ? Math.round((ganhos.length / abord) * 100) : 0) + '%'], ['Para bater a meta', ritmo],
+  ].map(([k, v]) => `<div class="vk"><b>${v}</b><span>${k}</span></div>`).join('');
   $('#metaBig').innerHTML = `
     <div class="mb-v"><b>${fmt(m.atual)}</b> <span>de ${fmt(m.valor)}</span></div>
     <div class="mb-bar"><i style="width:${m.pct}%"></i>${marcos.map((p) => `<u style="left:${p}%" class="${m.pct >= p ? 'ok' : ''}"><em>${p}%</em></u>`).join('')}</div>
@@ -743,7 +756,6 @@ function bindMetas() {
 
 /* ---------------- configurações ---------------- */
 function renderConfig() {
-  $('#jvFalar').checked = JV.cfg().falarAoIniciar;
   const f = $('#cfgForm');
   ['apiKey', 'meuNome', 'empresa', 'meuWhats', 'preco', 'mensalidade', 'followupDias', 'webhook', 'demoBase', 'roboUrl'].forEach((k) => (f.elements[k].value = S.cfg[k] ?? ''));
   f.elements.encurtar.checked = S.cfg.encurtar !== false;
@@ -752,8 +764,6 @@ function renderConfig() {
 }
 function bindConfig() {
   const f = $('#cfgForm');
-  $('#jvFalar').onchange = (e) => { JV.salvar({ falarAoIniciar: e.target.checked }); toast(e.target.checked ? 'Saudação falada ligada' : 'Saudação falada desligada'); };
-  $('#jvCfgBtn').onclick = () => { location.hash = '#/inicio'; setTimeout(() => JVUI.abrirConfig(), 300); };
   f.onsubmit = (e) => {
     e.preventDefault();
     const c = { ...S.cfg };
