@@ -27,6 +27,7 @@ const OI = [
   () => 'Oi, tudo bem?', () => 'Oi! Tudo bem?', () => 'Olá, tudo bem?', () => 'Oi, tudo certo?',
   () => `${saud()}! Tudo bem?`, () => `${saud()}, tudo bem?`, (l) => `Oi, tudo bem? Falo com a ${l.nome}?`,
   () => 'Opa, tudo bem?', () => `Oi, ${saud().toLowerCase()}! Tudo certo por aí?`,
+  () => 'Tudo certo por aí?', () => `${saud()}, como vai?`, () => 'Oi, como vai?', () => `Oi, ${saud().toLowerCase()}! Como vai?`, () => 'Olá! Tudo certo?',
 ];
 export const oi = (l) => pick(OI)(l);
 
