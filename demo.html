@@ -48,6 +48,14 @@
   document.documentElement.replaceChild(document.importNode(doc.body, true), document.body);
   document.title = doc.title;
   LSite.boot();
+  /* #vitrine: modo de exibição dentro do site da Nexo (sem intro, tudo visível, sem botões flutuantes, topo com altura fixa) */
+  if (location.hash === '#vitrine') {
+    var st = document.createElement('style'); st.textContent = '.hero{min-height:760px!important}.fwa,.pv,.grain,.cur,.cur2{display:none!important}html{overflow:hidden!important}';
+    document.head.appendChild(st);
+    var it = document.querySelector('.intro'); if (it) it.remove();
+    document.querySelectorAll('[data-r],.sh').forEach(function (x) { x.classList.add('in'); });
+    document.querySelectorAll('img[loading]').forEach(function (x) { x.loading = 'eager'; });
+  }
 })();
 </script>
 </body>

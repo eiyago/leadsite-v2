@@ -510,6 +510,8 @@ var LSite = (function () {
     /* responsivo */
     '@media (max-width:960px){.links,.nav .btn{display:none}.burger{display:block}.h-split .wrap,.ed-row,.about,.contact{grid-template-columns:1fr}.col{height:440px;margin-top:20px}.badge.b1{left:0}',
     '.perks{grid-template-columns:1fr 1fr}.s-list .row{grid-template-columns:44px 1fr auto;gap:14px}.s-list .row p{grid-column:2/4;grid-row:2}.about.rev figure{order:0}.gal{grid-template-columns:1fr 1fr;grid-auto-flow:dense}.gal figure{grid-column:auto!important;grid-row:auto!important}.gal figure:nth-child(1){grid-column:span 2!important}.logo{max-width:70%}}',
+    'html,body{overflow-x:clip}h1.disp{overflow-wrap:break-word}',
+    '@media (max-width:560px){.hero h1.disp,.hero h1{font-size:min(var(--h1m,13vw),64px)!important;word-break:normal}.h-seal,.e-seal,.c-seal{transform:scale(.8);transform-origin:top right}}',
     '@media (max-width:560px){body{font-size:16px}.perks{grid-template-columns:1fr}.hero{padding-top:110px}.btn{padding:15px 22px}.cta .btn{width:100%;justify-content:center}.map,.map iframe{min-height:320px}}',
   ].join('');
 
